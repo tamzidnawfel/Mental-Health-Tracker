@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Patient Waitlist Entry | Mental Health Resource Accessibility Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/waitlist.css">
+</head>
+<body>
+
+  <div class="container">
+
+    <header class="header-bar">
+      <div class="system-badge">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        CSE370 Module 1: Patient Journey & Allocation Engine
+      </div>
+      <h1 class="main-title">Patient Waitlist Entry</h1>
+      <p class="main-subtitle">Automated priority escalation & triage entry for accessible mental health support.</p>
+    </header>
+
+    <main class="card">
+      <div class="form-section-heading">
+        <span>Triage & Intake Registration</span>
+        <span class="badge">Feature 2 Engine</span>
+      </div>
+
+      <form id="waitlistForm" novalidate>
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="patientId">
+              Patient ID <span class="required-star">*</span>
+            </label>
+            <input 
+              type="number" 
+              id="patientId" 
+              name="patient_id" 
+              placeholder="e.g. 1042" 
+              min="1" 
+              required
+              autocomplete="off"
+            >
+            <span class="input-hint">Existing Patient ID registered in DBMS</span>
+          </div>
+
+          <div class="form-group">
+            <label for="specId">
+              Specialization Required <span class="required-star">*</span>
+            </label>
+            <select id="specId" name="spec_id" required>
+              <option value="" disabled selected>Select specialization...</option>
+              <option value="1">1 — Anxiety & Mood Disorders</option>
+              <option value="2">2 — PTSD & Trauma Recovery</option>
+              <option value="3">3 — Major Depressive Disorder</option>
+              <option value="4">4 — Child & Adolescent Counseling</option>
+              <option value="5">5 — Crisis Intervention & Suicide Prevention</option>
+              <option value="6">6 — Substance Abuse & Rehabilitation</option>
+              <option value="7">7 — General Psychotherapy</option>
+            </select>
+            <span class="input-hint">Links to SPECIALIZATION entity</span>
+          </div>
+
+          <div class="form-group">
+            <label for="languageCode">Preferred Language</label>
+            <select id="languageCode" name="language_code">
+              <option value="bn" selected>Bangla (বাংলা)</option>
+              <option value="en">English</option>
+            </select>
+            <span class="input-hint">For therapist matching</span>
+          </div>
+
+          <div class="form-group">
+            <label for="districtId">District / Zone</label>
+            <select id="districtId" name="district_id">
+              <option value="1" selected>1 — Dhaka Central</option>
+              <option value="2">2 — Chittagong Metropolitan</option>
+              <option value="3">3 — Sylhet Sadar</option>
+              <option value="4">4 — Rajshahi</option>
+              <option value="5">5 — Khulna</option>
+              <option value="6">6 — Barisal</option>
+              <option value="7">7 — Rangpur</option>
+            </select>
+            <span class="input-hint">For regional capacity routing</span>
+          </div>
+
+          <div class="form-group col-full">
+            <div class="crisis-card">
+              <div class="crisis-header">
+                <div>
+                  <label for="crisisScore" style="margin-bottom: 2px;">
+                    Self-Reported Crisis Score <span class="required-star">*</span>
+                  </label>
+                  <span class="input-hint">Determines automated DB trigger priority</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                  <div class="crisis-score-display">
+                    <span class="score-number" id="crisisScoreDisplay">5</span>
+                    <span class="score-max">/10</span>
+                  </div>
+                  <span id="priorityBadge" class="priority-badge moderate">Moderate Priority</span>
+                </div>
+              </div>
+
+              <div class="range-wrapper">
+                <input 
+                  type="range" 
+                  id="crisisScore" 
+                  name="crisis_score" 
+                  min="1" 
+                  max="10" 
+                  value="5" 
+                  step="1"
+                >
+                <div class="range-ticks">
+                  <span>1 (Mild)</span>
+                  <span>3</span>
+                  <span>5 (Moderate)</span>
+                  <span>7 (High)</span>
+                  <span>10 (Severe)</span>
+                </div>
+              </div>
+
+              <div id="crisisAlertBanner" class="crisis-alert-banner">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div>
+                  <strong>Critical Emergency Level:</strong> Patient will be tagged with <code>priority_level = 'CRITICAL'</code>. Immediate automated hotline routing & emergency escalation active.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group col-full">
+            <label for="notes">Intake Notes & Symptoms (Optional)</label>
+            <textarea 
+              id="notes" 
+              name="notes" 
+              rows="3" 
+              placeholder="Brief description of primary concerns, referral references, or safety considerations..."
+            ></textarea>
+          </div>
+
+          <div class="form-group col-full">
+            <button type="submit" id="submitBtn" class="submit-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+              <span>Add Patient to Priority Waitlist</span>
+            </button>
+          </div>
+
+        </div>
+      </form>
+
+      <div id="responseFeedback" class="response-feedback">
+        <h4>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+          </svg>
+          Waitlist Entry Prepared Successfully
+        </h4>
+        <p>Payload logged to console and formatted for Node.js API dispatch:</p>
+        <pre id="payloadPreview"></pre>
+      </div>
+
+    </main>
+
+    <footer class="form-footer">
+      Mental Health Resource Accessibility Tracker &bull; CSE370 Database Management Systems
+    </footer>
+  </div>
+
+  <script src="js/waitlist.js"></script>
+</body>
+</html>

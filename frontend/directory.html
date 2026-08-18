@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Directory</title>
+
+  <link rel="stylesheet" href="css/directory.css">
+</head>
+
+<body>
+
+<header>
+    <h1>Provider Directory</h1>
+    <p>Find healthcare providers and available services.</p>
+</header>
+
+<div class="container">
+
+    <div class="controls">
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Search provider by name..."
+        >
+
+        <select id="insuranceFilter">
+            <option value="">All Providers</option>
+            <option value="true">Accepts Insurance</option>
+            <option value="false">Does Not Accept Insurance</option>
+        </select>
+
+        <button onclick="loadDirectory()">
+            Load Directory
+        </button>
+
+    </div>
+
+    <div id="directory">
+
+        <div class="empty">
+            Click "Load Directory" to view providers.
+        </div>
+
+    </div>
+
+</div>
+
+  <script src="js/directory.js"></script>
+
+</body>
+</html>
