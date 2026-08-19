@@ -26,10 +26,10 @@ app.get('/', (req, res) => {
 });
 
 app.post('/api/register', (req, res) => {
-    const { name, email, phone, date_of_birth } = req.body;
-    const sql = 'INSERT INTO PATIENT (name, email, phone, date_of_birth) VALUES (?, ?, ?, ?)';
+    const { name, email, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, latitude, longitude } = req.body;
+    const sql = 'INSERT INTO PATIENT (name, email, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
-    db.query(sql, [name, email, phone, date_of_birth], (err, result) => {
+    db.query(sql, [name, email, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, latitude, longitude], (err, result) => {
         if (err) {
             console.error('Error inserting patient:', err);
             return res.status(500).json({ error: 'Failed to register patient' });

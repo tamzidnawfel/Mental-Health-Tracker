@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Registration - MindCare</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/provider.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Provider Registration</h1>
+        <p class="subtitle">Join our network of mental health professionals</p>
+        
+        <form action="#" method="POST">
+            <div class="form-group">
+                <label for="fullName">Full Name / Clinic Name</label>
+                <input type="text" id="fullName" name="fullName" required placeholder="e.g. Dr. Jane Doe">
+            </div>
+            
+            <div class="form-group">
+                <label for="providerType">Provider Type</label>
+                <select id="providerType" name="providerType" required>
+                    <option value="">Select type...</option>
+                    <option value="therapist">Therapist/Counselor</option>
+                    <option value="clinic">Clinic/Hospital</option>
+                    <option value="hotline">Crisis Hotline</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="contact@example.com">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            
+            <button type="submit">Register as Provider</button>
+        </form>
+        
+        <a href="index.html" class="back-link">← Back to Home</a>
+    </div>
+</body>
+</html>

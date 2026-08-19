@@ -3,28 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Patient Registration</title>
+    <title>Patient Registration - MindCare</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/register.css">
 </head>
 <body>
 
-<div class="form-container">
-    <h2>Patient Registration</h2>
+<div class="container">
+    <h1>Patient Registration</h1>
+    <p class="subtitle">Join our platform and take the first step towards a healthier you</p>
+    
     <form id="registrationForm">
-        <label for="name">Full Name</label>
-        <input type="text" id="name" required>
+        <div class="form-group">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" required placeholder="e.g. John Doe">
+        </div>
 
-        <label for="email">Email Address</label>
-        <input type="email" id="email" required>
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" required placeholder="contact@example.com">
+        </div>
 
-        <label for="phone">Phone Number</label>
-        <input type="tel" id="phone" required>
+        <div class="form-group">
+            <label for="phone">Phone Number</label>
+            <input type="tel" id="phone" required placeholder="e.g. 1234567890">
+        </div>
 
-        <label for="dob">Date of Birth</label>
-        <input type="date" id="dob" required>
+        <div class="form-group">
+            <label for="dob">Date of Birth</label>
+            <input type="date" id="dob" required>
+        </div>
+
+        <div class="form-group">
+            <label for="income">Income Bracket</label>
+            <select id="income" required>
+                <option value="">Select Income Bracket</option>
+                <option value="10000-30000">10,000 - 30,000</option>
+                <option value="30000-50000">30,000 - 50,000</option>
+                <option value="50000+">50,000+</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="preferred_language">Preferred Language</label>
+            <select id="preferred_language" required>
+                <option value="English">English</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="street">Street</label>
+            <input type="text" id="street" required placeholder="123 Main St">
+        </div>
+
+        <div class="form-group">
+            <label for="city">City</label>
+            <select id="city" required>
+                <option value="">Select City</option>
+                <option value="Dhaka">Dhaka</option>
+                <option value="Chittagong">Chittagong</option>
+                <option value="Sylhet">Sylhet</option>
+                <option value="Rajshahi">Rajshahi</option>
+                <option value="Khulna">Khulna</option>
+                <option value="Barisal">Barisal</option>
+                <option value="Rangpur">Rangpur</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="zip_code">Zip Code</label>
+            <input type="text" id="zip_code" required placeholder="e.g. 1000">
+        </div>
 
         <button type="submit">Register Patient</button>
     </form>
+    
+    <a href="index.html" class="back-link">← Back to Home</a>
 </div>
 
 <script src="js/register.js"></script>
