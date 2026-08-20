@@ -42,7 +42,8 @@ CREATE TABLE `patient` (
   `city` varchar(100) DEFAULT NULL,
   `zip_code` varchar(20) DEFAULT NULL,
   `age` int(11) GENERATED ALWAYS AS (timestampdiff(YEAR,`date_of_birth`,curdate())) VIRTUAL,
-  `district_id` int(11) DEFAULT NULL
+  `district_id` int(11) DEFAULT NULL,
+  `password` varchar(255)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
