@@ -59,7 +59,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 sessionStorage.setItem('currentPatient', JSON.stringify(data.patient));
                 localStorage.setItem('currentPatient', JSON.stringify(data.patient));
 
-                loginBtn.innerHTML = '<span>Login Successful!</span> <span class="login-icon-badge">✓</span>';
+                loginBtn.innerHTML = '<span>Redirecting to Home...</span> <span class="login-icon-badge">✓</span>';
+
+                setTimeout(() => {
+                    window.location.href = 'home.html';
+                }, 800);
             } else {
                 showAlert(data.error || 'Incorrect email or password.', 'error');
                 loginBtn.disabled = false;

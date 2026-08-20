@@ -1,0 +1,270 @@
+/**
+ * MindCare - Patient Home & Wellness Portal JavaScript
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Initialize Patient Session & Greeting
+    initPatientSession();
+
+    // 2. Initialize Mood Tracker
+    initMoodTracker();
+
+    // 3. Initialize 4-7-8 Guided Breathing Exercise
+    initBreathingTool();
+
+    // 4. Initialize Affirmation Generator
+    initAffirmations();
+});
+
+/**
+ * 1. Patient Session Handler
+ */
+function initPatientSession() {
+    const navPatientName = document.getElementById('navPatientName');
+    const heroPatientName = document.getElementById('heroPatientName');
+    const userAvatar = document.getElementById('userAvatar');
+    const logoutBtn = document.getElementById('logoutBtn');
+
+    // Retrieve patient data from session or local storage
+    const storedPatientStr = sessionStorage.getItem('currentPatient') || localStorage.getItem('currentPatient');
+    
+    if (storedPatientStr) {
+        try {
+            const patient = JSON.parse(storedPatientStr);
+            const fullName = patient.name || 'Patient';
+            const firstName = fullName.split(' ')[0] || fullName;
+            
+            if (navPatientName) navPatientName.textContent = fullName;
+            if (heroPatientName) heroPatientName.textContent = firstName;
+            if (userAvatar) userAvatar.textContent = firstName.charAt(0).toUpperCase();
+        } catch (e) {
+            console.error('Error parsing patient session:', e);
+        }
+    }
+
+    // Logout handling
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to log out of MindCare?')) {
+                sessionStorage.removeItem('currentPatient');
+                localStorage.removeItem('currentPatient');
+                window.location.href = 'patient-login.html';
+            }
+        });
+    }
+}
+
+/**
+ * 2. Interactive Mood Tracker
+ */
+const moodData = {
+    joyful: {
+        emoji: '🌟',
+        title: 'Wonderful to see you thriving!',
+        message: 'Channel this positive energy into creative endeavors, gratitude journaling, or sharing a warm conversation with someone you care about.'
+    },
+    calm: {
+        emoji: '🌿',
+        title: 'Tranquil and grounded.',
+        message: 'A calm mind is a powerful anchor. Savor this peaceful moment of equilibrium and take a few mindful breaths.'
+    },
+    neutral: {
+        emoji: '☕',
+        title: 'Every day is a valid chapter.',
+        message: 'It is completely normal to have quiet, neutral days. Stay hydrated, take gentle pauses, and don’t pressure yourself to overperform.'
+    },
+    low: {
+        emoji: '💛',
+        title: 'Be extra gentle with yourself.',
+        message: 'Your feelings are valid. Take small, compassionate steps today. Remember, reaching out to a therapist or friend is a sign of courage, not weakness.'
+    },
+    anxious: {
+        emoji: '🌧️',
+        title: 'You are safe. This moment will pass.',
+        message: 'Your anxiety is a temporary storm, not your permanent state. Try our 1-Minute Grounding Breath tool right beside this card to reset your nervous system.'
+    }
+};
+
+function initMoodTracker() {
+    const moodButtons = document.querySelectorAll('.mood-btn');
+    const moodResponse = document.getElementById('moodResponse');
+    const responseEmoji = document.getElementById('responseEmoji');
+    const responseTitle = document.getElementById('responseTitle');
+    const responseMessage = document.getElementById('responseMessage');
+
+    moodButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            // Remove previous active state
+            moodButtons.forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+
+            const moodKey = btn.getAttribute('data-mood');
+            const data = moodData[moodKey];
+
+            if (data && moodResponse) {
+                // Smooth transition
+                moodResponse.style.opacity = '0';
+                setTimeout(() => {
+                    responseEmoji.textContent = data.emoji;
+                    responseTitle.textContent = data.title;
+                    responseMessage.textContent = data.message;
+                    moodResponse.style.opacity = '1';
+                }, 150);
+                
+                // Save daily mood state
+                try {
+                    localStorage.setItem('mindcare_last_mood', JSON.stringify({
+                        mood: moodKey,
+                        date: new Date().toISOString().slice(0, 10)
+                    }));
+                } catch (e) {}
+            }
+        });
+    });
+
+    // Check if user already logged a mood today
+    try {
+        const savedMood = JSON.parse(localStorage.getItem('mindcare_last_mood'));
+        const todayStr = new Date().toISOString().slice(0, 10);
+        if (savedMood && savedMood.date === todayStr) {
+            const matchBtn = document.querySelector(`.mood-btn[data-mood="${savedMood.mood}"]`);
+            if (matchBtn) matchBtn.click();
+        }
+    } catch (e) {}
+}
+
+/**
+ * 3. 4-7-8 Guided Breathing Tool
+ */
+function initBreathingTool() {
+    const breathingOrb = document.getElementById('breathingOrb');
+    const breathingText = document.getElementById('breathingText');
+    const breathingTimer = document.getElementById('breathingTimer');
+    const startBreathingBtn = document.getElementById('startBreathingBtn');
+    const breathBtnLabel = document.getElementById('breathBtnLabel');
+    const cycleCounter = document.getElementById('cycleCounter');
+
+    if (!startBreathingBtn || !breathingOrb) return;
+
+    let isRunning = false;
+    let breathInterval = null;
+    let countdownInterval = null;
+    let completedCycles = 0;
+
+    const phases = [
+        { name: 'Inhale', class: 'inhale', duration: 4, label: 'Inhale gently...' },
+        { name: 'Hold', class: 'hold', duration: 7, label: 'Hold your breath...' },
+        { name: 'Exhale', class: 'exhale', duration: 8, label: 'Exhale slowly...' }
+    ];
+
+    function stopBreathing() {
+        isRunning = false;
+        clearInterval(breathInterval);
+        clearInterval(countdownInterval);
+        breathingOrb.className = 'breathing-circle-inner';
+        breathingText.textContent = 'Ready';
+        breathingTimer.textContent = '--';
+        breathBtnLabel.textContent = 'Start Breathing Exercise';
+        startBreathingBtn.style.background = '#0284C7';
+    }
+
+    function runPhase(phaseIndex) {
+        if (!isRunning) return;
+
+        const currentPhase = phases[phaseIndex];
+        breathingOrb.className = `breathing-circle-inner ${currentPhase.class}`;
+        breathingText.textContent = currentPhase.name;
+        
+        let secondsLeft = currentPhase.duration;
+        breathingTimer.textContent = `${secondsLeft}s`;
+
+        clearInterval(countdownInterval);
+        countdownInterval = setInterval(() => {
+            if (!isRunning) return;
+            secondsLeft--;
+            if (secondsLeft > 0) {
+                breathingTimer.textContent = `${secondsLeft}s`;
+            }
+        }, 1000);
+
+        breathInterval = setTimeout(() => {
+            if (!isRunning) return;
+            
+            const nextPhaseIndex = (phaseIndex + 1) % phases.length;
+            if (nextPhaseIndex === 0) {
+                completedCycles++;
+                if (cycleCounter) {
+                    cycleCounter.textContent = `Completed: ${completedCycles} ${completedCycles === 1 ? 'cycle' : 'cycles'}`;
+                }
+            }
+            runPhase(nextPhaseIndex);
+        }, currentPhase.duration * 1000);
+    }
+
+    startBreathingBtn.addEventListener('click', () => {
+        if (isRunning) {
+            stopBreathing();
+        } else {
+            isRunning = true;
+            breathBtnLabel.textContent = 'Pause Exercise';
+            startBreathingBtn.style.background = '#E11D48';
+            runPhase(0);
+        }
+    });
+}
+
+/**
+ * 4. Daily Mindful Affirmations Rotator
+ */
+const affirmations = [
+    {
+        quote: "You don’t have to control your thoughts. You just have to stop letting them control you. Give yourself grace today.",
+        author: "— MindCare Mindfulness Guide"
+    },
+    {
+        quote: "Healing isn't linear. Some days are heavy, some days are light. Every step forward counts, no matter how small.",
+        author: "— Dr. Sarah Smith, Clinical Psychologist"
+    },
+    {
+        quote: "You are allowed to take up space, to have feelings, and to pause whenever your soul needs rest.",
+        author: "— MindCare Wellness Sanctuary"
+    },
+    {
+        quote: "Breathe in peace, breathe out tension. You survived 100% of your hardest days so far.",
+        author: "— Daily Grounding Reminder"
+    },
+    {
+        quote: "Mental wellness is not about being positive all the time; it is about being honest, kind, and patient with yourself.",
+        author: "— Dr. Emily Johnson, Psychotherapist"
+    },
+    {
+        quote: "Your worth is not defined by your productivity. Simply being here and trying is more than enough.",
+        author: "— MindCare Community Circle"
+    }
+];
+
+function initAffirmations() {
+    const textElem = document.getElementById('dailyAffirmationText');
+    const authorElem = document.getElementById('affirmationAuthor');
+    const newBtn = document.getElementById('newAffirmationBtn');
+
+    if (!newBtn || !textElem) return;
+
+    let currentIndex = 0;
+
+    newBtn.addEventListener('click', () => {
+        newBtn.disabled = true;
+        textElem.style.opacity = '0';
+        if (authorElem) authorElem.style.opacity = '0';
+
+        setTimeout(() => {
+            currentIndex = (currentIndex + 1) % affirmations.length;
+            textElem.textContent = affirmations[currentIndex].quote;
+            if (authorElem) authorElem.textContent = affirmations[currentIndex].author;
+
+            textElem.style.opacity = '1';
+            if (authorElem) authorElem.style.opacity = '1';
+            newBtn.disabled = false;
+        }, 200);
+    });
+}

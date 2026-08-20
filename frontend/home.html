@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Home &amp; Wellness Portal - MindCare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/home.css">
+</head>
+
+<body>
+
+    <!-- TOP EMERGENCY ALERT & HOTLINE BAR -->
+    <div class="top-announcement-bar">
+        <div class="bar-container">
+            <span class="pulse-indicator"></span>
+            <span class="bar-text"><strong>24/7 Crisis Support Available:</strong> Speak with a confidential crisis counselor anytime.</span>
+            <a href="tel:988" class="hotline-chip">📞 Call 988 / 017-000-MIND</a>
+        </div>
+    </div>
+
+    <!-- MAIN NAVBAR -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="brand-logo">
+                <div class="logo-icon-wrapper">
+                    <span class="logo-plus">+</span>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">MindCare</span>
+                    <span class="brand-sub">Mental Health &amp; Wellness</span>
+                </div>
+            </a>
+
+            <nav class="nav-links">
+                <a href="home.html" class="nav-link active">Home</a>
+                <a href="#booking-section" class="nav-link">Book Appointment</a>
+                <a href="#therapists-section" class="nav-link">Doctors &amp; Therapists</a>
+                <a href="#wellness-hub" class="nav-link">Daily Wellness</a>
+                <a href="#services-section" class="nav-link">Care Programs</a>
+                <a href="directory.html" class="nav-link">Directory</a>
+                <a href="waitlist.html" class="nav-link">Waitlist Tracker</a>
+            </nav>
+
+            <div class="nav-user-actions">
+                <div class="user-profile-pill" id="userProfilePill">
+                    <div class="user-avatar" id="userAvatar">P</div>
+                    <div class="user-info">
+                        <span class="user-greeting">Welcome,</span>
+                        <span class="user-name" id="navPatientName">Patient</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-logout" id="logoutBtn" title="Log out from MindCare">
+                    <span>Logout</span>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- HERO SECTION -->
+        <section class="hero-section">
+            <div class="hero-container">
+                <div class="hero-content">
+                    <div class="hero-badge">
+                        <span class="badge-icon">🌿</span>
+                        <span>Your Dedicated Safe Space for Healing</span>
+                    </div>
+
+                    <h1 class="hero-title">
+                        Welcome to your journey, <br>
+                        <span class="gradient-text" id="heroPatientName">Friend</span> 👋
+                    </h1>
+
+                    <p class="hero-subtitle">
+                        Embrace clarity, emotional peace, and personalized professional care. Connect with top-tier licensed psychologists and psychiatrists dedicated to your mental wellness and happy life.
+                    </p>
+
+                    <!-- MAJOR APPOINTMENT BOOKING CALL TO ACTION -->
+                    <div class="hero-cta-card" id="booking-section">
+                        <div class="cta-header">
+                            <span class="sparkle-icon">✨</span>
+                            <h3>Personalized Care Matching</h3>
+                        </div>
+                        <p class="cta-desc">Match with compassionate providers according to your location, insurance, budget, and therapy preferences.</p>
+                        
+                        <div class="cta-actions">
+                            <a href="directory.html" class="btn-primary-glow" id="mainBookingBtn">
+                                <span class="btn-main-text">Book Your Appointment Now</span>
+                                <span class="btn-sub-label">Find Your Best-Fit Specialist ➔</span>
+                            </a>
+                            <a href="#wellness-hub" class="btn-secondary-soft">
+                                <span>Explore Daily Wellness Hub</span>
+                            </a>
+                        </div>
+
+                        <!-- Quick Specialty Tags -->
+                        <div class="quick-tags">
+                            <span class="tag-label">Popular specializations:</span>
+                            <a href="directory.html?search=Anxiety" class="specialty-chip">Anxiety &amp; Panic</a>
+                            <a href="directory.html?search=Depression" class="specialty-chip">Depression</a>
+                            <a href="directory.html?search=PTSD" class="specialty-chip">Trauma &amp; PTSD</a>
+                            <a href="directory.html?search=Counseling" class="specialty-chip">Child Counseling</a>
+                            <a href="directory.html?search=Psychotherapy" class="specialty-chip">General Psychotherapy</a>
+                        </div>
+                    </div>
+
+                    <!-- Trust Stats -->
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <span class="stat-val">4.9 ★</span>
+                            <span class="stat-lbl">Average Care Rating</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-val">100%</span>
+                            <span class="stat-lbl">Confidential &amp; Secure</span>
+                        </div>
+                        <div class="stat-divider"></div>
+                        <div class="stat-item">
+                            <span class="stat-val">24/7</span>
+                            <span class="stat-lbl">Continuous Crisis Help</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hero-visual">
+                    <div class="visual-card-wrapper">
+                        <img src="images/hero-consultation.jpg" alt="Therapist consulting with a patient in a warm serene clinic" class="hero-main-img">
+                        
+                        <!-- Floating Glass Badges -->
+                        <div class="floating-glass-card card-top-right">
+                            <div class="glass-icon-circle">👩‍⚕️</div>
+                            <div>
+                                <strong class="glass-title">Compassionate Guidance</strong>
+                                <span class="glass-sub">Empathy in every session</span>
+                            </div>
+                        </div>
+
+                        <div class="floating-glass-card card-bottom-left">
+                            <div class="pulse-dot"></div>
+                            <div>
+                                <strong class="glass-title">1,200+ Happy Lives Reclaimed</strong>
+                                <span class="glass-sub">Real stories of peace &amp; healing</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- INTERACTIVE WELLNESS & MINDFULNESS HUB -->
+        <section class="wellness-section" id="wellness-hub">
+            <div class="section-header">
+                <span class="section-tag">DAILY MENTAL WELLNESS HUB</span>
+                <h2 class="section-title">Nurture Your Mind Every Single Day</h2>
+                <p class="section-subtitle">Take a moment to check in with yourself, practice grounding breathwork, and receive daily mindful reflections.</p>
+            </div>
+
+            <div class="wellness-grid">
+                <!-- Interactive Mood Check-In -->
+                <div class="wellness-card mood-checkin-card">
+                    <div class="card-badge">✨ Daily Check-In</div>
+                    <h3>How are you feeling right now?</h3>
+                    <p class="card-intro">Select your current emotional space to receive a tailored mindful affirmation:</p>
+
+                    <div class="mood-selector" id="moodSelector">
+                        <button type="button" class="mood-btn" data-mood="joyful" data-label="Joyful &amp; Vibrant">
+                            <span class="mood-emoji">🌟</span>
+                            <span class="mood-text">Joyful</span>
+                        </button>
+                        <button type="button" class="mood-btn" data-mood="calm" data-label="Calm &amp; Grounded">
+                            <span class="mood-emoji">😊</span>
+                            <span class="mood-text">Calm</span>
+                        </button>
+                        <button type="button" class="mood-btn" data-mood="neutral" data-label="Okay / Neutral">
+                            <span class="mood-emoji">😐</span>
+                            <span class="mood-text">Okay</span>
+                        </button>
+                        <button type="button" class="mood-btn" data-mood="low" data-label="Low &amp; Fatigued">
+                            <span class="mood-emoji">😔</span>
+                            <span class="mood-text">Low</span>
+                        </button>
+                        <button type="button" class="mood-btn" data-mood="anxious" data-label="Overwhelmed / Anxious">
+                            <span class="mood-emoji">🌧️</span>
+                            <span class="mood-text">Anxious</span>
+                        </button>
+                    </div>
+
+                    <!-- Dynamic Mood Feedback -->
+                    <div class="mood-response" id="moodResponse">
+                        <div class="response-icon" id="responseEmoji">🌱</div>
+                        <div class="response-text">
+                            <strong id="responseTitle">You are safe and supported.</strong>
+                            <p id="responseMessage">Click any emotion above to receive thoughtful advice and grounding prompts.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guided Breathing Exercise -->
+                <div class="wellness-card breathing-card">
+                    <div class="card-badge">🌬️ 4-7-8 Breathing</div>
+                    <h3>1-Minute Grounding Breath</h3>
+                    <p class="card-intro">Calm your nervous system. Inhale calmness, exhale stress.</p>
+
+                    <div class="breathing-display">
+                        <div class="breathing-circle-outer">
+                            <div class="breathing-circle-inner" id="breathingOrb">
+                                <span class="breathing-state-text" id="breathingText">Ready</span>
+                                <span class="breathing-timer-num" id="breathingTimer">--</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="breathing-controls">
+                        <button type="button" class="btn-breath-action" id="startBreathingBtn">
+                            <span id="breathBtnLabel">Start Breathing Exercise</span>
+                        </button>
+                        <span class="breath-cycle-counter" id="cycleCounter">Completed: 0 cycles</span>
+                    </div>
+                </div>
+
+                <!-- Daily Affirmation & Hope Card -->
+                <div class="wellness-card affirmation-card">
+                    <div class="card-badge">💛 Thought of the Day</div>
+                    <h3>Daily Mindful Reflection</h3>
+                    
+                    <div class="affirmation-quote-box">
+                        <span class="quote-mark">“</span>
+                        <p class="affirmation-text" id="dailyAffirmationText">
+                            You don’t have to control your thoughts. You just have to stop letting them control you. Give yourself grace today.
+                        </p>
+                        <span class="quote-author" id="affirmationAuthor">— MindCare Mindfulness Guide</span>
+                    </div>
+
+                    <button type="button" class="btn-new-affirmation" id="newAffirmationBtn">
+                        <span>🔄 Receive Another Reflection</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- FEATURED DOCTORS & THERAPISTS SHOWCASE -->
+        <section class="therapists-section" id="therapists-section">
+            <div class="section-header">
+                <span class="section-tag">VERIFIED HEALTHCARE PROFESSIONALS</span>
+                <h2 class="section-title">Meet Our Dedicated Therapists &amp; Doctors</h2>
+                <p class="section-subtitle">Experienced, board-certified clinicians providing compassionate, personalized care for every stage of your journey.</p>
+            </div>
+
+            <div class="therapists-grid">
+                <!-- Doctor 1: Dr. Sarah Smith -->
+                <div class="doctor-card">
+                    <div class="doctor-img-container">
+                        <img src="images/dr-sarah-smith.jpg" alt="Dr. Sarah Smith - Clinical Psychologist" class="doctor-img">
+                        <span class="badge-insurance">✓ Accepts Insurance</span>
+                        <div class="rating-chip">⭐ 4.8 (120+ reviews)</div>
+                    </div>
+                    <div class="doctor-details">
+                        <div class="doctor-header">
+                            <h3 class="doctor-name">Dr. Sarah Smith</h3>
+                            <span class="doctor-role">Licensed Clinical Psychologist</span>
+                        </div>
+                        <p class="doctor-bio">Specializing in cognitive behavioral therapy (CBT), panic management, and mood stabilization with 12+ years of clinical excellence.</p>
+                        
+                        <div class="doctor-specs">
+                            <span class="spec-pill">Anxiety &amp; Mood</span>
+                            <span class="spec-pill">CBT Specialist</span>
+                            <span class="spec-pill">Dhaka Central</span>
+                        </div>
+
+                        <div class="doctor-footer">
+                            <div class="fee-info">
+                                <span class="fee-label">Consultation Fee</span>
+                                <span class="fee-value">৳ 1,500 <small>/ session</small></span>
+                            </div>
+                            <a href="directory.html?doctor=Sarah" class="btn-book-doctor">
+                                Book Now ➔
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Doctor 2: Dr. Michael Rahman -->
+                <div class="doctor-card">
+                    <div class="doctor-img-container">
+                        <img src="images/dr-michael-rahman.jpg" alt="Dr. Michael Rahman - Consultant Psychiatrist" class="doctor-img">
+                        <span class="badge-insurance">✓ Accepts Insurance</span>
+                        <div class="rating-chip">⭐ 4.5 (95+ reviews)</div>
+                    </div>
+                    <div class="doctor-details">
+                        <div class="doctor-header">
+                            <h3 class="doctor-name">Dr. Michael Rahman</h3>
+                            <span class="doctor-role">Consultant Psychiatrist &amp; MD</span>
+                        </div>
+                        <p class="doctor-bio">Expert in diagnosing and managing major depressive disorders, stress disorders, and neuro-psychiatric conditions.</p>
+                        
+                        <div class="doctor-specs">
+                            <span class="spec-pill">Major Depression</span>
+                            <span class="spec-pill">Adult Psychiatry</span>
+                            <span class="spec-pill">Chittagong Metro</span>
+                        </div>
+
+                        <div class="doctor-footer">
+                            <div class="fee-info">
+                                <span class="fee-label">Consultation Fee</span>
+                                <span class="fee-value">৳ 1,200 <small>/ session</small></span>
+                            </div>
+                            <a href="directory.html?doctor=Michael" class="btn-book-doctor">
+                                Book Now ➔
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Doctor 3: Dr. Emily Johnson -->
+                <div class="doctor-card">
+                    <div class="doctor-img-container">
+                        <img src="images/dr-emily-johnson.jpg" alt="Dr. Emily Johnson - Psychotherapist & Trauma Specialist" class="doctor-img">
+                        <span class="badge-selfpay">Self-Pay / Sliding Scale</span>
+                        <div class="rating-chip">⭐ 4.9 (150+ reviews)</div>
+                    </div>
+                    <div class="doctor-details">
+                        <div class="doctor-header">
+                            <h3 class="doctor-name">Dr. Emily Johnson</h3>
+                            <span class="doctor-role">Psychotherapist &amp; Trauma Specialist</span>
+                        </div>
+                        <p class="doctor-bio">Passionate about guiding individuals through PTSD, grief recovery, and emotional trauma using gentle, trauma-informed therapy.</p>
+                        
+                        <div class="doctor-specs">
+                            <span class="spec-pill">PTSD &amp; Trauma</span>
+                            <span class="spec-pill">Grief Counseling</span>
+                            <span class="spec-pill">Sylhet Sadar</span>
+                        </div>
+
+                        <div class="doctor-footer">
+                            <div class="fee-info">
+                                <span class="fee-label">Consultation Fee</span>
+                                <span class="fee-value">৳ 2,000 <small>/ session</small></span>
+                            </div>
+                            <a href="directory.html?doctor=Emily" class="btn-book-doctor">
+                                Book Now ➔
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Doctor 4: Dr. Ahmed Khan -->
+                <div class="doctor-card">
+                    <div class="doctor-img-container">
+                        <img src="images/dr-ahmed-khan.jpg" alt="Dr. Ahmed Khan - Addiction & Crisis Specialist" class="doctor-img">
+                        <span class="badge-insurance">✓ Accepts Insurance</span>
+                        <div class="rating-chip">⭐ 4.2 (80+ reviews)</div>
+                    </div>
+                    <div class="doctor-details">
+                        <div class="doctor-header">
+                            <h3 class="doctor-name">Dr. Ahmed Khan</h3>
+                            <span class="doctor-role">Addiction &amp; Crisis Specialist</span>
+                        </div>
+                        <p class="doctor-bio">Over 15 years empowering patients in substance abuse rehabilitation, habit modification, and sustainable lifestyle recovery.</p>
+                        
+                        <div class="doctor-specs">
+                            <span class="spec-pill">Substance Recovery</span>
+                            <span class="spec-pill">Crisis Intervention</span>
+                            <span class="spec-pill">Dhaka Central</span>
+                        </div>
+
+                        <div class="doctor-footer">
+                            <div class="fee-info">
+                                <span class="fee-label">Consultation Fee</span>
+                                <span class="fee-value">৳ 1,000 <small>/ session</small></span>
+                            </div>
+                            <a href="directory.html?doctor=Ahmed" class="btn-book-doctor">
+                                Book Now ➔
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="therapists-cta-banner">
+                <div class="banner-text">
+                    <h3>Looking for a specific specialist or language?</h3>
+                    <p>Filter all verified providers across Bangladesh by location, language, and clinical focus.</p>
+                </div>
+                <a href="directory.html" class="btn-browse-all">Browse Complete Directory ➔</a>
+            </div>
+        </section>
+
+
+        <!-- HAPPY LIFE & RECOVERY STORIES THEME -->
+        <section class="happy-life-section">
+            <div class="happy-life-container">
+                <div class="happy-life-visual">
+                    <img src="images/happy-lifestyle.jpg" alt="Smiling person in golden sunlight enjoying mental freedom and happy life" class="happy-life-img">
+                    <div class="happy-life-caption">
+                        <strong>"Happiness is not the absence of struggle, but the discovery of peace."</strong>
+                        <span>— MindCare Wellness Philosophy</span>
+                    </div>
+                </div>
+
+                <div class="happy-life-content">
+                    <span class="section-tag">THE HAPPY LIFE THEME</span>
+                    <h2 class="section-title">Reclaim Joy, Calmness, and Confidence</h2>
+                    <p class="happy-desc">
+                        Mental health is not just about coping with distress — it is about thriving, cultivating deep inner resilience, rebuilding joyful relationships, and greeting each new sunrise with excitement.
+                    </p>
+
+                    <div class="benefit-points">
+                        <div class="benefit-item">
+                            <div class="benefit-icon">🌿</div>
+                            <div class="benefit-info">
+                                <strong>Personalized Emotional Care</strong>
+                                <p>Evidence-based modalities designed around your personal history and pace.</p>
+                            </div>
+                        </div>
+
+                        <div class="benefit-item">
+                            <div class="benefit-icon">🤝</div>
+                            <div class="benefit-info">
+                                <strong>Support Groups &amp; Community</strong>
+                                <p>Connect with peers who understand your journey in safe, moderated circles.</p>
+                            </div>
+                        </div>
+
+                        <div class="benefit-item">
+                            <div class="benefit-icon">🛡️</div>
+                            <div class="benefit-info">
+                                <strong>Zero Judgment, 100% Empathy</strong>
+                                <p>Speak freely knowing your privacy, dignity, and autonomy are unconditionally respected.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="happy-cta-row">
+                        <a href="directory.html" class="btn-primary-glow">Book Your Best-Fit Appointment ➔</a>
+                        <a href="waitlist.html" class="btn-secondary-link">Check Waitlist Status</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- GROUP SUPPORT & THERAPY PROGRAMS -->
+        <section class="services-section" id="services-section">
+            <div class="section-header">
+                <span class="section-tag">COMPREHENSIVE CARE PROGRAMS</span>
+                <h2 class="section-title">Explore Specialized Support Options</h2>
+                <p class="section-subtitle">From 1-on-1 psychotherapy to community circles, choose the environment best suited for your healing.</p>
+            </div>
+
+            <div class="services-grid">
+                <div class="service-card">
+                    <div class="service-icon">👤</div>
+                    <h3>1-on-1 Individual Therapy</h3>
+                    <p>Confidential one-on-one sessions addressing anxiety, mood changes, stress, and self-esteem.</p>
+                    <a href="directory.html" class="service-link">Find Individual Therapists ➔</a>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">👥</div>
+                    <h3>Support Groups &amp; Circles</h3>
+                    <p>Shared healing spaces for grief, chronic illness, caregiver fatigue, and relationship recovery.</p>
+                    <a href="directory.html" class="service-link">Join Support Groups ➔</a>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">🧠</div>
+                    <h3>Cognitive Behavioral Therapy</h3>
+                    <p>Structured, goal-oriented therapy to identify negative thought patterns and reshape habits.</p>
+                    <a href="directory.html" class="service-link">Find CBT Clinicians ➔</a>
+                </div>
+
+                <div class="service-card">
+                    <div class="service-icon">⚡</div>
+                    <h3>Crisis Intervention</h3>
+                    <p>Urgent stabilization for acute emotional crises, panic episodes, or distress with priority routing.</p>
+                    <a href="waitlist.html" class="service-link">Priority Waitlist &amp; Crisis ➔</a>
+                </div>
+            </div>
+
+            <!-- Group Therapy Banner -->
+            <div class="group-banner">
+                <div class="group-banner-img-wrap">
+                    <img src="images/group-therapy.jpg" alt="Group therapy session with supportive people smiling" class="group-banner-img">
+                </div>
+                <div class="group-banner-info">
+                    <span class="badge-pill">Community Healing</span>
+                    <h3>You are never alone in this journey</h3>
+                    <p>Weekly guided peer circles are facilitated by licensed therapists every Thursday and Saturday. Join dozens of people walking the path of shared growth.</p>
+                    <a href="directory.html" class="btn-group-action">Explore Support Circles ➔</a>
+                </div>
+            </div>
+        </section>
+
+
+        <!-- 24/7 CRISIS HELPLINE CALLOUT -->
+        <section class="crisis-callout-section">
+            <div class="crisis-callout-container">
+                <div class="crisis-icon-pulse">🚨</div>
+                <div class="crisis-callout-content">
+                    <h2>In Immediate Crisis or Distress?</h2>
+                    <p>If you or someone you care about is experiencing thoughts of self-harm, severe crisis, or extreme panic, help is available right now. You don't have to wait for an appointment.</p>
+                </div>
+                <div class="crisis-buttons">
+                    <a href="tel:988" class="btn-crisis-call">📞 Call 988 (Toll-Free)</a>
+                    <a href="tel:01700064632" class="btn-crisis-secondary">📱 Local Crisis Hotline</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-col brand-col">
+                <div class="brand-logo">
+                    <div class="logo-icon-wrapper">
+                        <span class="logo-plus">+</span>
+                    </div>
+                    <span class="brand-name">MindCare</span>
+                </div>
+                <p class="footer-desc">Your dedicated mental health platform for verified psychological care, therapy matching, and priority support in Bangladesh.</p>
+                <p class="disclaimer"><strong>Disclaimer:</strong> MindCare is an appointment and care tracking platform. In life-threatening emergencies, please contact your nearest emergency room immediately.</p>
+            </div>
+
+            <div class="footer-col">
+                <h4>Quick Navigation</h4>
+                <ul>
+                    <li><a href="home.html">Patient Home</a></li>
+                    <li><a href="directory.html">Doctor &amp; Therapist Directory</a></li>
+                    <li><a href="waitlist.html">Waitlist &amp; Crisis Tracker</a></li>
+                    <li><a href="register.html">Register New Patient</a></li>
+                    <li><a href="patient-login.html">Patient Login</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Specializations</h4>
+                <ul>
+                    <li><a href="directory.html?search=Anxiety">Anxiety &amp; Panic Disorders</a></li>
+                    <li><a href="directory.html?search=Depression">Major Depressive Disorder</a></li>
+                    <li><a href="directory.html?search=Trauma">PTSD &amp; Trauma Recovery</a></li>
+                    <li><a href="directory.html?search=Child">Child &amp; Adolescent Care</a></li>
+                    <li><a href="directory.html?search=Addiction">Substance Abuse Recovery</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>Emergency Contacts</h4>
+                <ul class="contact-list">
+                    <li>📞 <strong>National Crisis:</strong> 988</li>
+                    <li>📱 <strong>MindCare Line:</strong> 017-000-MIND</li>
+                    <li>💬 <strong>Crisis Chat:</strong> 24/7 Live Support</li>
+                    <li>📧 <strong>Support:</strong> help@mindcare.org</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <div class="footer-bottom-container">
+                <p>&copy; 2026 MindCare Mental Health System. Built for compassion, privacy, and healing.</p>
+                <div class="bottom-links">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms of Service</a>
+                    <a href="#">Confidentiality Charter</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- SCRIPT -->
+    <script src="js/home.js"></script>
+
+</body>
+
+</html>
