@@ -13,7 +13,11 @@
     <h1>Patient Registration</h1>
     <p class="subtitle">Join our platform and take the first step towards a healthier you</p>
     
+    <!-- Feedback Message Alert Box -->
+    <div id="alertBox" class="alert-box"></div>
+
     <form id="registrationForm">
+
         <div class="form-group">
             <label for="name">Full Name</label>
             <input type="text" id="name" required placeholder="e.g. John Doe">
@@ -78,10 +82,38 @@
         <button type="submit">Register Patient</button>
     </form>
     
+    <div class="login-prompt">
+        <span>Already have an account?</span>
+        <a href="patient-login.html" class="login-link">
+            Login <span class="login-icon-badge">➔</span>
+        </a>
+    </div>
+
     <a href="index.html" class="back-link">← Back to Home</a>
+</div>
+
+<!-- Password Display Modal (Shown Once After Registration) -->
+<div id="passwordModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-icon-success">✓</div>
+        <h2>Registration Successful!</h2>
+        <p class="modal-sub">Your account has been created. An automated password has been generated for your login.</p>
+
+        <div class="password-display-box">
+            <span class="pwd-label">Your Generated Password</span>
+            <div class="pwd-value-row">
+                <span id="generatedPasswordDisplay" class="pwd-text">MC-X9k2P</span>
+                <button type="button" id="copyPasswordBtn" class="btn-copy" title="Copy Password">📋 Copy</button>
+            </div>
+            <p class="pwd-warning">⚠️ <strong>Important:</strong> This password is only displayed once. Please copy and save it securely to log in.</p>
+        </div>
+
+        <a href="patient-login.html" id="proceedLoginBtn" class="btn-proceed">Proceed to Login ➔</a>
+    </div>
 </div>
 
 <script src="js/register.js"></script>
 
 </body>
 </html>
+

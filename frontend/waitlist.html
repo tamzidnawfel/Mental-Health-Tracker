@@ -1,183 +1,209 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Patient Waitlist Entry | Mental Health Resource Accessibility Tracker</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@600;700&display=swap" rel="stylesheet">
-
-  <link rel="stylesheet" href="css/waitlist.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Waitlist & Priority Management - MindCare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/waitlist.css">
 </head>
 <body>
 
-  <div class="container">
-
-    <header class="header-bar">
-      <div class="system-badge">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-        </svg>
-        CSE370 Module 1: Patient Journey & Allocation Engine
-      </div>
-      <h1 class="main-title">Patient Waitlist Entry</h1>
-      <p class="main-subtitle">Automated priority escalation & triage entry for accessible mental health support.</p>
+    <!-- MindCare Navigation Header -->
+    <header>
+        <a href="index.html" class="logo">
+            <div class="logo-icon">+</div>
+            MindCare
+        </a>
+        <nav>
+            <a href="index.html" class="nav-home-link">← Home</a>
+        </nav>
     </header>
 
-    <main class="card">
-      <div class="form-section-heading">
-        <span>Triage & Intake Registration</span>
-        <span class="badge">Feature 2 Engine</span>
-      </div>
-
-      <form id="waitlistForm" novalidate>
-        <div class="form-grid">
-
-          <div class="form-group">
-            <label for="patientId">
-              Patient ID <span class="required-star">*</span>
-            </label>
-            <input 
-              type="number" 
-              id="patientId" 
-              name="patient_id" 
-              placeholder="e.g. 1042" 
-              min="1" 
-              required
-              autocomplete="off"
-            >
-            <span class="input-hint">Existing Patient ID registered in DBMS</span>
-          </div>
-
-          <div class="form-group">
-            <label for="specId">
-              Specialization Required <span class="required-star">*</span>
-            </label>
-            <select id="specId" name="spec_id" required>
-              <option value="" disabled selected>Select specialization...</option>
-              <option value="1">1 — Anxiety & Mood Disorders</option>
-              <option value="2">2 — PTSD & Trauma Recovery</option>
-              <option value="3">3 — Major Depressive Disorder</option>
-              <option value="4">4 — Child & Adolescent Counseling</option>
-              <option value="5">5 — Crisis Intervention & Suicide Prevention</option>
-              <option value="6">6 — Substance Abuse & Rehabilitation</option>
-              <option value="7">7 — General Psychotherapy</option>
-            </select>
-            <span class="input-hint">Links to SPECIALIZATION entity</span>
-          </div>
-
-          <div class="form-group">
-            <label for="languageCode">Preferred Language</label>
-            <select id="languageCode" name="language_code">
-              <option value="bn" selected>Bangla (বাংলা)</option>
-              <option value="en">English</option>
-            </select>
-            <span class="input-hint">For therapist matching</span>
-          </div>
-
-          <div class="form-group">
-            <label for="districtId">District / Zone</label>
-            <select id="districtId" name="district_id">
-              <option value="1" selected>1 — Dhaka Central</option>
-              <option value="2">2 — Chittagong Metropolitan</option>
-              <option value="3">3 — Sylhet Sadar</option>
-              <option value="4">4 — Rajshahi</option>
-              <option value="5">5 — Khulna</option>
-              <option value="6">6 — Barisal</option>
-              <option value="7">7 — Rangpur</option>
-            </select>
-            <span class="input-hint">For regional capacity routing</span>
-          </div>
-
-          <div class="form-group col-full">
-            <div class="crisis-card">
-              <div class="crisis-header">
-                <div>
-                  <label for="crisisScore" style="margin-bottom: 2px;">
-                    Self-Reported Crisis Score <span class="required-star">*</span>
-                  </label>
-                  <span class="input-hint">Determines automated DB trigger priority</span>
-                </div>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                  <div class="crisis-score-display">
-                    <span class="score-number" id="crisisScoreDisplay">5</span>
-                    <span class="score-max">/10</span>
-                  </div>
-                  <span id="priorityBadge" class="priority-badge moderate">Moderate Priority</span>
-                </div>
-              </div>
-
-              <div class="range-wrapper">
-                <input 
-                  type="range" 
-                  id="crisisScore" 
-                  name="crisis_score" 
-                  min="1" 
-                  max="10" 
-                  value="5" 
-                  step="1"
-                >
-                <div class="range-ticks">
-                  <span>1 (Mild)</span>
-                  <span>3</span>
-                  <span>5 (Moderate)</span>
-                  <span>7 (High)</span>
-                  <span>10 (Severe)</span>
-                </div>
-              </div>
-
-              <div id="crisisAlertBanner" class="crisis-alert-banner">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <div>
-                  <strong>Critical Emergency Level:</strong> Patient will be tagged with <code>priority_level = 'CRITICAL'</code>. Immediate automated hotline routing & emergency escalation active.
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="form-group col-full">
-            <label for="notes">Intake Notes & Symptoms (Optional)</label>
-            <textarea 
-              id="notes" 
-              name="notes" 
-              rows="3" 
-              placeholder="Brief description of primary concerns, referral references, or safety considerations..."
-            ></textarea>
-          </div>
-
-          <div class="form-group col-full">
-            <button type="submit" id="submitBtn" class="submit-btn">
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-              <span>Add Patient to Priority Waitlist</span>
-            </button>
-          </div>
-
+    <!-- Hero Section -->
+    <section class="hero-banner">
+        <div class="hero-badge">
+            ⚡ Automated Priority &amp; Escalation Engine
         </div>
-      </form>
+        <h1>Waitlist &amp; Priority Management</h1>
+        <p>Automated queue monitoring that escalates patient priority when appointment waiting time exceeds safety thresholds (&gt;14 days) or when self-reported crisis assessments increase.</p>
+    </section>
 
-      <div id="responseFeedback" class="response-feedback">
-        <h4>
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-          </svg>
-          Waitlist Entry Prepared Successfully
-        </h4>
-        <p>Payload logged to console and formatted for Node.js API dispatch:</p>
-        <pre id="payloadPreview"></pre>
-      </div>
+    <!-- Main Content Container -->
+    <main class="main-wrapper">
+
+        <!-- Summary Metric Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper">
+                    📋
+                </div>
+                <div class="stat-info">
+                    <h3 id="statTotalWaitlist">0</h3>
+                    <p>Total on Waitlist</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper critical">
+                    🚨
+                </div>
+                <div class="stat-info">
+                    <h3 id="statCriticalHigh">0</h3>
+                    <p>Critical / High Priority</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper warning">
+                    ⏳
+                </div>
+                <div class="stat-info">
+                    <h3 id="statEscalated">0</h3>
+                    <p>Safety Escalated (&gt;14d)</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper success">
+                    ✅
+                </div>
+                <div class="stat-info">
+                    <h3 id="statAssigned">0</h3>
+                    <p>Assigned Slots</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Full-Width Priority Queue Panel -->
+        <section class="dashboard-panel">
+            
+            <div class="panel-header">
+                <div class="panel-header-title">
+                    <h2>
+                        <span>📊</span> Active Patient Priority Queue
+                    </h2>
+                    <p>Patients are placed in queue when appointment slots are filled. Priority auto-escalates based on days waiting and self-reported crisis score.</p>
+                </div>
+            </div>
+
+            <!-- Queue Filter & Search Toolbar -->
+            <div class="queue-toolbar">
+                <div class="search-box">
+                    <span class="search-icon">🔍</span>
+                    <input type="text" id="queueSearch" placeholder="Search by patient name, ID, specialization...">
+                </div>
+
+                <div class="filter-group">
+                    <select id="priorityFilter" class="filter-select">
+                        <option value="ALL">All Priorities</option>
+                        <option value="CRITICAL">Critical</option>
+                        <option value="HIGH">High</option>
+                        <option value="MODERATE">Moderate</option>
+                        <option value="ROUTINE">Routine</option>
+                    </select>
+
+                    <select id="statusFilter" class="filter-select">
+                        <option value="ALL">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Assigned">Assigned</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </select>
+
+                    <button id="refreshBtn" class="btn-refresh" title="Reload queue data">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Full-Width Queue Table -->
+            <div class="table-responsive">
+                <table class="queue-table">
+                    <thead>
+                        <tr>
+                            <th>Waitlist ID</th>
+                            <th>Patient Details</th>
+                            <th>Specialization</th>
+                            <th>Request Date</th>
+                            <th>Days Waiting</th>
+                            <th>Self-Reported Crisis</th>
+                            <th>Automated Priority</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="queueTableBody">
+                        <tr>
+                            <td colspan="9" class="empty-queue">
+                                <div class="empty-queue-icon">⏳</div>
+                                <p>Loading priority waitlist records...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </section>
 
     </main>
 
-    <footer class="form-footer">
-      Mental Health Resource Accessibility Tracker &bull; CSE370 Database Management Systems
-    </footer>
-  </div>
+    <!-- Edit Self-Reported Crisis Score Modal -->
+    <div id="updateModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-icon">⚡</div>
+            <h3>Update Self-Reported Crisis Score</h3>
+            <p>Update assessment symptoms to trigger real-time automated priority recalculation.</p>
 
-  <script src="js/waitlist.js"></script>
+            <input type="hidden" id="editWaitlistId">
+
+            <div class="crisis-modal-box">
+                <div class="crisis-modal-header">
+                    <label for="editCrisisRange">Self-Reported Score (1 - 10)</label>
+                    <div class="modal-score-badge">
+                        <span id="editScoreDisplay">7</span><span style="font-size: 0.9rem; color: var(--text-light);">/10</span>
+                    </div>
+                </div>
+
+                <input 
+                    type="range" 
+                    id="editCrisisRange" 
+                    min="1" 
+                    max="10" 
+                    value="7" 
+                    step="1"
+                >
+
+                <div class="slider-ticks">
+                    <span>1 (Mild)</span>
+                    <span>3</span>
+                    <span>5 (Moderate)</span>
+                    <span>7 (High)</span>
+                    <span>10 (Severe)</span>
+                </div>
+
+                <div class="priority-preview-strip">
+                    <span>Recalculated Priority:</span>
+                    <span id="editPriorityBadge" class="priority-tag high">High</span>
+                </div>
+            </div>
+
+            <div class="modal-actions">
+                <button id="saveUpdateBtn" class="btn-primary-save">Save &amp; Recalculate</button>
+                <button id="cancelUpdateBtn" class="btn-cancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="toast-msg"></div>
+
+    <!-- Footer -->
+    <footer>
+        MindCare Mental Health Resource Accessibility Tracker &bull; CSE370 Database Systems
+    </footer>
+
+    <script src="js/waitlist.js"></script>
 </body>
 </html>
