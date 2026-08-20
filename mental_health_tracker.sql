@@ -84,6 +84,52 @@ INSERT INTO `provider` (`provider_id`, `name`, `session_fee`, `max_capacity`, `r
 (8, 'Dr. Ahmed Khan', 1000.00, 25, 4.20, 23.79250000, 90.40780000, 1, 1);
 
 -- --------------------------------------------------------
+-- Table structure for table `therapists`
+-- --------------------------------------------------------
+
+CREATE TABLE `therapists` (
+  `provider_id` int(11) NOT NULL,
+  `license_no` varchar(100) NOT NULL,
+  `years_of_experience` int(11) DEFAULT NULL,
+  PRIMARY KEY (`provider_id`),
+  CONSTRAINT `fk_therapists_provider`
+    FOREIGN KEY (`provider_id`) REFERENCES `provider` (`provider_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+-- --------------------------------------------------------
+-- Table structure for table `clinics`
+-- --------------------------------------------------------
+
+CREATE TABLE `clinics` (
+  `provider_id` int(11) NOT NULL,
+  `registration_no` varchar(100) NOT NULL,
+  `total_beds` int(11) DEFAULT NULL,
+  PRIMARY KEY (`provider_id`),
+  CONSTRAINT `fk_clinics_provider`
+    FOREIGN KEY (`provider_id`) REFERENCES `provider` (`provider_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+
+-- --------------------------------------------------------
+-- Table structure for table `hotlines`
+-- --------------------------------------------------------
+
+CREATE TABLE `hotlines` (
+  `provider_id` int(11) NOT NULL,
+  `max_capacity` int(11) DEFAULT NULL,
+  `active_connections` int(11) DEFAULT NULL,
+  `status` enum('Active','Inactive') NOT NULL DEFAULT 'Active',
+  PRIMARY KEY (`provider_id`),
+  CONSTRAINT `fk_hotlines_provider`
+    FOREIGN KEY (`provider_id`) REFERENCES `provider` (`provider_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `region`
@@ -110,6 +156,34 @@ INSERT INTO `region` (`district_id`, `district_name`, `population`, `risk_index`
 (7, 'Rangpur', 2200000, 6.80);
 
 -- --------------------------------------------------------
+-- Table structure for table `languages`
+-- --------------------------------------------------------
+
+CREATE TABLE `languages` (
+  `language_code` varchar(10) NOT NULL,
+  `language_name` varchar(100) NOT NULL,
+  PRIMARY KEY (`language_code`)
+);
+
+-- --------------------------------------------------------
+-- Table structure for table `provider_languages`
+-- --------------------------------------------------------
+
+CREATE TABLE `provider_languages` (
+  `provider_id` int(11) NOT NULL,
+  `language_code` varchar(10) NOT NULL,
+  PRIMARY KEY (`provider_id`, `language_code`),
+  CONSTRAINT `fk_provider_languages_provider`
+    FOREIGN KEY (`provider_id`) REFERENCES `provider` (`provider_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT `fk_provider_languages_language`
+    FOREIGN KEY (`language_code`) REFERENCES `languages` (`language_code`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+-- --------------------------------------------------------
 
 --
 -- Table structure for table `specialization`
@@ -132,6 +206,24 @@ INSERT INTO `specialization` (`spec_id`, `spec_name`) VALUES
 (3, 'Major Depressive Disorder'),
 (2, 'PTSD & Trauma Recovery'),
 (6, 'Substance Abuse & Rehabilitation');
+
+-- --------------------------------------------------------
+-- Table structure for table `provider_specializations`
+-- --------------------------------------------------------
+
+CREATE TABLE `provider_specializations` (
+  `provider_id` int(11) NOT NULL,
+  `spec_id` int(11) NOT NULL,
+  PRIMARY KEY (`provider_id`, `spec_id`),
+  CONSTRAINT `fk_provider_specializations_provider`
+    FOREIGN KEY (`provider_id`) REFERENCES `provider` (`provider_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT `fk_provider_specializations_spec`
+    FOREIGN KEY (`spec_id`) REFERENCES `specialization` (`spec_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
 
 -- --------------------------------------------------------
 
@@ -157,6 +249,144 @@ INSERT INTO `waitlist` (`waitlist_id`, `patient_id`, `spec_id`, `request_date`, 
 (1, 1, 1, '2026-08-17', 7, 'HIGH', 'Active'),
 (2, 3, 3, '2026-08-17', 8, 'HIGH', 'Active');
 
+-- --------------------------------------------------------
+-- Table structure for table `referrals`
+-- --------------------------------------------------------
+
+CREATE TABLE `referrals` (
+  `referral_id` int(11) NOT NULL,
+  `patient_id` int(11) NOT NULL,
+  `source_provider_id` int(11) NOT NULL,
+  `target_provider_id` int(11) NOT NULL,
+  `referral_date` date NOT NULL,
+  `status` varchar(50) NOT NULL, -- TODO: confirm whether status should be ENUM instead
+  `notes` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`referral_id`),
+  CONSTRAINT `fk_referrals_patient`
+    FOREIGN KEY (`patient_id`) REFERENCES `patient` (`patient_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT `fk_referrals_source_provider`
+    FOREIGN KEY (`source_provider_id`) REFERENCES `provider` (`provider_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT `fk_referrals_target_provider`
+    FOREIGN KEY (`target_provider_id`) REFERENCES `provider` (`provider_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+-- --------------------------------------------------------
+-- Table structure for table `appointments`
+-- --------------------------------------------------------
+
+CREATE TABLE `appointments` (
+  `appointment_id` int(11) NOT NULL,
+  `patient_id` int(11) NOT NULL,
+  `provider_id` int(11) NOT NULL,
+  `referral_id` int(11) DEFAULT NULL,
+  `appointment_date` date NOT NULL,
+  `status` varchar(50) NOT NULL, -- TODO: confirm whether status should be ENUM instead
+  PRIMARY KEY (`appointment_id`),
+  CONSTRAINT `fk_appointments_patient`
+    FOREIGN KEY (`patient_id`) REFERENCES `patient` (`patient_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT `fk_appointments_provider`
+    FOREIGN KEY (`provider_id`) REFERENCES `provider` (`provider_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT `fk_appointments_referral`
+    FOREIGN KEY (`referral_id`) REFERENCES `referrals` (`referral_id`)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE
+);
+
+-- --------------------------------------------------------
+-- Table structure for table `resource_access_logs`
+-- --------------------------------------------------------
+
+CREATE TABLE `resource_access_logs` (
+  `log_id` int(11) NOT NULL,
+  `patient_id` int(11) NOT NULL,
+  `resource_type` varchar(100) NOT NULL,
+  `access_time` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`log_id`),
+  CONSTRAINT `fk_resource_access_logs_patient`
+    FOREIGN KEY (`patient_id`) REFERENCES `patient` (`patient_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+-- --------------------------------------------------------
+-- Table structure for table `system_alerts`
+-- --------------------------------------------------------
+
+CREATE TABLE `system_alerts` (
+  `alert_id` int(11) NOT NULL,
+  `district_id` int(11) NOT NULL,
+  `alert_type` varchar(100) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `status` varchar(50) NOT NULL, -- TODO: confirm whether status should be ENUM instead
+  PRIMARY KEY (`alert_id`),
+  CONSTRAINT `fk_system_alerts_region`
+    FOREIGN KEY (`district_id`) REFERENCES `region` (`district_id`)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+);
+
+-- new tables
+-- --------------------------------------------------------
+-- AUTO_INCREMENT for new tables
+-- --------------------------------------------------------
+
+ALTER TABLE `therapists`
+  MODIFY `provider_id` int(11) NOT NULL;
+
+ALTER TABLE `clinics`
+  MODIFY `provider_id` int(11) NOT NULL;
+
+ALTER TABLE `hotlines`
+  MODIFY `provider_id` int(11) NOT NULL;
+
+ALTER TABLE `referrals`
+  MODIFY `referral_id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `appointments`
+  MODIFY `appointment_id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `resource_access_logs`
+  MODIFY `log_id` int(11) NOT NULL AUTO_INCREMENT;
+
+ALTER TABLE `system_alerts`
+  MODIFY `alert_id` int(11) NOT NULL AUTO_INCREMENT;
+
+
+-- --------------------------------------------------------
+-- Indexes for new tables
+-- --------------------------------------------------------
+
+ALTER TABLE `provider_languages`
+  ADD KEY `fk_provider_languages_language` (`language_code`);
+
+ALTER TABLE `provider_specializations`
+  ADD KEY `fk_provider_specializations_spec` (`spec_id`);
+
+ALTER TABLE `referrals`
+  ADD KEY `fk_referrals_patient` (`patient_id`),
+  ADD KEY `fk_referrals_source_provider` (`source_provider_id`),
+  ADD KEY `fk_referrals_target_provider` (`target_provider_id`);
+
+ALTER TABLE `appointments`
+  ADD KEY `fk_appointments_patient` (`patient_id`),
+  ADD KEY `fk_appointments_provider` (`provider_id`),
+  ADD KEY `fk_appointments_referral` (`referral_id`);
+
+ALTER TABLE `resource_access_logs`
+  ADD KEY `fk_resource_access_logs_patient` (`patient_id`);
+
+ALTER TABLE `system_alerts`
+  ADD KEY `fk_system_alerts_region` (`district_id`);
 --
 -- Indexes for dumped tables
 --
