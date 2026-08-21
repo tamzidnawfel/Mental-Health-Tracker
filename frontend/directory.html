@@ -1,53 +1,364 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Provider Directory</title>
-
-  <link rel="stylesheet" href="css/directory.css">
+    <title>Find Best-Fit Providers &amp; Helplines - MindCare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/directory.css">
 </head>
 
 <body>
 
-<header>
-    <h1>Provider Directory</h1>
-    <p>Find healthcare providers and available services.</p>
-</header>
-
-<div class="container">
-
-    <div class="controls">
-
-        <input
-            type="text"
-            id="searchInput"
-            placeholder="Search provider by name..."
-        >
-
-        <select id="insuranceFilter">
-            <option value="">All Providers</option>
-            <option value="true">Accepts Insurance</option>
-            <option value="false">Does Not Accept Insurance</option>
-        </select>
-
-        <button onclick="loadDirectory()">
-            Load Directory
-        </button>
-
-    </div>
-
-    <div id="directory">
-
-        <div class="empty">
-            Click "Load Directory" to view providers.
+    <!-- TOP EMERGENCY ALERT BAR -->
+    <div class="top-announcement-bar">
+        <div class="bar-container">
+            <span class="pulse-indicator"></span>
+            <span class="bar-text"><strong>Need Urgent Consolation?</strong> 24/7 Crisis Support is free, confidential, and available right now.</span>
+            <a href="tel:988" class="hotline-chip">📞 Call 988 / 017-000-MIND</a>
         </div>
-
     </div>
 
-</div>
+    <!-- MAIN NAVBAR -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="brand-logo">
+                <div class="logo-icon-wrapper">
+                    <span class="logo-plus">+</span>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">MindCare</span>
+                    <span class="brand-sub">Provider Directory &amp; Matching</span>
+                </div>
+            </a>
 
-  <script src="js/directory.js"></script>
+            <nav class="nav-links">
+                <a href="home.html" class="nav-link">Home</a>
+                <a href="directory.html" class="nav-link active">Find Providers</a>
+                <a href="waitlist.html" class="nav-link">Waitlist Tracker</a>
+                <a href="home.html#wellness-hub" class="nav-link">Daily Wellness</a>
+            </nav>
+
+            <div class="nav-user-actions">
+                <div class="user-profile-pill" id="userProfilePill">
+                    <div class="user-avatar" id="userAvatar">P</div>
+                    <div class="user-info">
+                        <span class="user-greeting">Logged in as</span>
+                        <span class="user-name" id="navPatientName">Patient</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-logout" id="logoutBtn" title="Log out from MindCare">
+                    <span>Logout</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="directory-main">
+        <!-- HERO BANNER -->
+        <section class="hero-banner">
+            <div class="hero-inner">
+                <div class="hero-badge">
+                    <span class="badge-icon">🌿</span>
+                    <span>Smart Personalized Care Matching</span>
+                </div>
+                <h1 class="hero-title">Find Your Best-Fit Provider &amp; Care</h1>
+                <p class="hero-subtitle">
+                    Filter verified licensed therapists and psychiatric clinics based on your budget, location, language, and clinical specializations.
+                </p>
+
+                <!-- Patient Profile Auto-Match Alert -->
+                <div class="profile-match-banner" id="profileMatchBanner" style="display: none;">
+                    <div class="match-icon">✨</div>
+                    <div class="match-text">
+                        <strong>Personalized for you:</strong>
+                        <span id="profileMatchDetails">Showing providers matching your preferred language and city.</span>
+                    </div>
+                    <button type="button" class="btn-apply-profile" id="applyProfilePrefBtn">Apply Profile Defaults</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- FILTER & SEARCH PANEL -->
+        <section class="filter-section">
+            <div class="filter-card">
+                <!-- Search & Category Tabs -->
+                <div class="filter-top-row">
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="searchInput" placeholder="Search by doctor name, clinic, license, or keyword..." autocomplete="off">
+                        <button type="button" class="btn-clear-search" id="clearSearchBtn" title="Clear Search" style="display: none;">✕</button>
+                    </div>
+
+                    <div class="category-tabs" id="categoryTabs">
+                        <button type="button" class="tab-btn active" data-type="all">
+                            <span>All Providers</span>
+                            <span class="tab-count" id="countAll">0</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-type="therapist">
+                            <span>🩺 Therapists &amp; Doctors</span>
+                            <span class="tab-count" id="countTherapists">0</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-type="clinic">
+                            <span>🏥 Mental Health Clinics</span>
+                            <span class="tab-count" id="countClinics">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Detailed Filters Grid -->
+                <div class="filters-grid">
+                    <!-- 1. Session Fee (Budget) -->
+                    <div class="filter-col fee-filter-col">
+                        <div class="filter-label-row">
+                            <label for="feeSlider">Session Fee Budget</label>
+                            <span class="filter-val-badge" id="feeDisplay">Any Budget (≤ ৳3,500)</span>
+                        </div>
+                        <div class="slider-wrap">
+                            <input type="range" id="feeSlider" min="1000" max="3500" step="100" value="3500">
+                        </div>
+                        <div class="fee-presets">
+                            <button type="button" class="preset-chip" data-fee="3500">Any</button>
+                            <button type="button" class="preset-chip" data-fee="1200">≤ ৳1,200</button>
+                            <button type="button" class="preset-chip" data-fee="1600">≤ ৳1,600</button>
+                            <button type="button" class="preset-chip" data-fee="2200">≤ ৳2,200</button>
+                            <button type="button" class="preset-chip" data-fee="2800">≤ ৳2,800</button>
+                        </div>
+                    </div>
+
+                    <!-- 2. Minimum Rating -->
+                    <div class="filter-col">
+                        <label for="ratingSelect">Minimum Rating</label>
+                        <div class="custom-select-wrap">
+                            <select id="ratingSelect">
+                                <option value="">Any Rating</option>
+                                <option value="4.0">⭐ 4.0 &amp; Above</option>
+                                <option value="4.5">⭐ 4.5 &amp; Above</option>
+                                <option value="4.8">⭐ 4.8 &amp; Above (Top Rated)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 3. City / Region -->
+                    <div class="filter-col">
+                        <label for="citySelect">City / District</label>
+                        <div class="custom-select-wrap">
+                            <select id="citySelect">
+                                <option value="all">All Cities &amp; Districts</option>
+                                <!-- Populated dynamically from backend /api/directory/meta -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 4. Specialization -->
+                    <div class="filter-col">
+                        <label for="specSelect">Specialization Needed</label>
+                        <div class="custom-select-wrap">
+                            <select id="specSelect">
+                                <option value="all">All Specializations</option>
+                                <!-- Populated dynamically from backend /api/directory/meta -->
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 5. Preferred Language -->
+                    <div class="filter-col language-filter-col">
+                        <label>Preferred Language</label>
+                        <div class="language-pills" id="languageSelector">
+                            <button type="button" class="lang-pill active" data-lang="all">All Languages</button>
+                            <button type="button" class="lang-pill" data-lang="002">🇧🇩 Bengali Speaking</button>
+                            <button type="button" class="lang-pill" data-lang="001">🌐 English Speaking</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Filter Bottom Summary & Reset -->
+                <div class="filter-bottom-bar">
+                    <div class="active-filter-chips" id="activeFilterChips">
+                        <!-- Dynamic active filter tags -->
+                    </div>
+                    <div class="filter-action-btns">
+                        <button type="button" class="btn-reset-filters" id="resetFiltersBtn">
+                            <span>🔄 Reset Filters</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RESULTS LISTING SECTION -->
+        <section class="results-section">
+            <div class="results-header-bar">
+                <div class="results-counter">
+                    <h2 id="resultsHeading">Available Healthcare Providers</h2>
+                    <span class="results-badge" id="resultsCountBadge">Loading...</span>
+                </div>
+
+                <div class="sort-controls">
+                    <label for="sortBySelect">Sort By:</label>
+                    <select id="sortBySelect">
+                        <option value="rating_desc">⭐ Rating: High to Low</option>
+                        <option value="fee_asc">৳ Fee: Low to High</option>
+                        <option value="fee_desc">৳ Fee: High to Low</option>
+                        <option value="experience_desc">🏆 Most Experienced / Largest</option>
+                        <option value="name_asc">🔤 Name: A to Z</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Provider Directory Cards Grid -->
+            <div class="providers-grid" id="providersGrid">
+                <div class="loading-state">
+                    <div class="spinner"></div>
+                    <p>Loading best-fit providers from database...</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- BOOK APPOINTMENT MODAL -->
+    <div class="modal-backdrop" id="bookingModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon">📅</span>
+                    <div>
+                        <h3 id="modalProviderName">Book Appointment</h3>
+                        <span class="modal-provider-sub" id="modalProviderType">Doctor / Clinic</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" id="closeBookingModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="booking-summary-box">
+                    <div class="summary-item">
+                        <span class="sum-label">Session Fee:</span>
+                        <span class="sum-value" id="modalFee">৳ 1,500</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="sum-label">Location:</span>
+                        <span class="sum-value" id="modalLocation">Dhaka Central</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="sum-label">Rating:</span>
+                        <span class="sum-value" id="modalRating">⭐ 4.8</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="sum-label">Capacity Status:</span>
+                        <span class="sum-value" id="modalCapacityStatus">Available</span>
+                    </div>
+                </div>
+
+                <form id="appointmentForm" class="appointment-form">
+                    <input type="hidden" id="bookingProviderId">
+                    <input type="hidden" id="bookingSpecId">
+
+                    <div class="form-group">
+                        <label for="patientNameInput">Patient Name</label>
+                        <input type="text" id="patientNameInput" required placeholder="Enter your full name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="patientEmailInput">Patient Email</label>
+                        <input type="email" id="patientEmailInput" required placeholder="Enter your registered email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="appointmentDateInput">Select Appointment Date</label>
+                        <input type="date" id="appointmentDateInput" required>
+                    </div>
+
+                    <div class="booking-alert-box" id="bookingAlertBox" style="display: none;"></div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary-modal" id="cancelBookingBtn">Cancel</button>
+                        <button type="submit" class="btn-primary-modal" id="confirmBookingBtn">
+                            <span>Confirm Booking ➔</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Full Capacity Waitlist Prompt (Shown if slots are filled) -->
+                <div class="capacity-waitlist-prompt" id="capacityWaitlistPrompt" style="display: none;">
+                    <div class="waitlist-alert-icon">⏳</div>
+                    <h4>Provider at Maximum Capacity</h4>
+                    <p id="capacityMessage">This doctor has reached their full patient limit. You can join the Priority Waitlist to secure the next opening based on priority.</p>
+                    <a href="waitlist.html" class="btn-join-waitlist" id="joinWaitlistRedirectBtn">Join Priority Waitlist ➔</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROVIDER DETAILS MODAL -->
+    <div class="modal-backdrop" id="detailsModal" style="display: none;">
+        <div class="modal-card modal-card-large">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon" id="detailIcon">🩺</span>
+                    <div>
+                        <h3 id="detailName">Dr. Provider</h3>
+                        <span class="modal-provider-sub" id="detailSubtitle">Licensed Clinical Specialist</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" id="closeDetailsModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="details-grid-layout" id="detailContent">
+                    <!-- Dynamic detailed information -->
+                </div>
+
+                <div class="modal-actions" style="margin-top: 24px;">
+                    <button type="button" class="btn-secondary-modal" id="closeDetailActionBtn">Close</button>
+                    <button type="button" class="btn-primary-modal" id="detailBookActionBtn">Book Appointment ➔</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-col brand-col">
+                <div class="brand-logo">
+                    <div class="logo-icon-wrapper">
+                        <span class="logo-plus">+</span>
+                    </div>
+                    <span class="brand-name">MindCare</span>
+                </div>
+                <p class="footer-desc">Your dedicated mental health platform for verified psychological care, therapy matching, and priority support in Bangladesh.</p>
+            </div>
+
+            <div class="footer-col">
+                <h4>Quick Navigation</h4>
+                <ul>
+                    <li><a href="home.html">Patient Home</a></li>
+                    <li><a href="directory.html">Doctor &amp; Therapist Directory</a></li>
+                    <li><a href="waitlist.html">Waitlist &amp; Crisis Tracker</a></li>
+                    <li><a href="register.html">Register New Patient</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>24/7 Crisis Contacts</h4>
+                <ul class="contact-list">
+                    <li>📞 <strong>National Crisis:</strong> 988</li>
+                    <li>📱 <strong>MindCare Helpline:</strong> 017-000-MIND</li>
+                    <li>💬 <strong>Emergency Consolation:</strong> 24/7 Available</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 MindCare Mental Health System. Built for compassion, privacy, and healing.</p>
+        </div>
+    </footer>
+
+    <script src="js/directory.js"></script>
 
 </body>
 </html>
