@@ -146,7 +146,7 @@ async function initDirectoryMeta() {
             directoryMetadata.regions.forEach(r => {
                 const opt = document.createElement('option');
                 opt.value = r.district_id;
-                opt.textContent = `${r.district_name} (Risk: ${r.risk_index || 'N/A'})`;
+                opt.textContent = r.district_name;
                 citySelect.appendChild(opt);
             });
         }
@@ -800,6 +800,55 @@ function initModals() {
             await submitAppointmentBooking();
         });
     }
+
+    // Direct Waitlist Form Submit & Slider
+    const waitlistDirectJoinForm = document.getElementById('waitlistDirectJoinForm');
+    const modalWaitlistCrisisInput = document.getElementById('modalWaitlistCrisisInput');
+    const modalWaitlistScoreBadge = document.getElementById('modalWaitlistScoreBadge');
+    const modalWaitlistPriorityPreview = document.getElementById('modalWaitlistPriorityPreview');
+
+    if (modalWaitlistCrisisInput) {
+        modalWaitlistCrisisInput.addEventListener('input', (e) => {
+            const score = parseInt(e.target.value, 10);
+            if (modalWaitlistScoreBadge) modalWaitlistScoreBadge.textContent = `${score}/10`;
+            
+            let pText = 'ROUTINE CARE';
+            let pColor = '#065f46';
+            let pBg = '#ecfdf5';
+            let pBrd = '#6ee7b7';
+
+            if (score >= 9) {
+                pText = 'CRITICAL PRIORITY';
+                pColor = '#991b1b';
+                pBg = '#fee2e2';
+                pBrd = '#f87171';
+            } else if (score >= 7) {
+                pText = 'HIGH PRIORITY';
+                pColor = '#9a3412';
+                pBg = '#ffedd5';
+                pBrd = '#fb923c';
+            } else if (score >= 4) {
+                pText = 'MODERATE PRIORITY';
+                pColor = '#854d0e';
+                pBg = '#fef9c3';
+                pBrd = '#facc15';
+            }
+
+            if (modalWaitlistPriorityPreview) {
+                modalWaitlistPriorityPreview.textContent = pText;
+                modalWaitlistPriorityPreview.style.color = pColor;
+                modalWaitlistPriorityPreview.style.background = pBg;
+                modalWaitlistPriorityPreview.style.borderColor = pBrd;
+            }
+        });
+    }
+
+    if (waitlistDirectJoinForm) {
+        waitlistDirectJoinForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            await submitDirectWaitlistJoin();
+        });
+    }
 }
 
 /**
@@ -822,6 +871,8 @@ window.openBookingModal = function(providerId) {
     const bookingAlertBox = document.getElementById('bookingAlertBox');
     const capacityWaitlistPrompt = document.getElementById('capacityWaitlistPrompt');
     const appointmentForm = document.getElementById('appointmentForm');
+    const capacityMessage = document.getElementById('capacityMessage');
+    const waitlistAlertBox = document.getElementById('waitlistAlertBox');
 
     // Set form defaults
     if (modalProviderName) modalProviderName.textContent = provider.name;
@@ -831,7 +882,7 @@ window.openBookingModal = function(providerId) {
     if (modalRating) modalRating.textContent = `⭐ ${parseFloat(provider.rating_avg || 4.5).toFixed(2)} / 5`;
     if (bookingProviderId) bookingProviderId.value = provider.provider_id;
 
-    // Spec ID for potential waitlist redirection
+    // Spec ID for waitlist queue
     const firstSpecId = provider.spec_ids ? provider.spec_ids.split(',')[0] : 1;
     if (bookingSpecId) bookingSpecId.value = firstSpecId;
 
@@ -851,6 +902,10 @@ window.openBookingModal = function(providerId) {
         bookingAlertBox.style.display = 'none';
         bookingAlertBox.textContent = '';
     }
+    if (waitlistAlertBox) {
+        waitlistAlertBox.style.display = 'none';
+        waitlistAlertBox.textContent = '';
+    }
 
     // Capacity status check
     const curPatients = provider.current_patients || 0;
@@ -859,16 +914,26 @@ window.openBookingModal = function(providerId) {
 
     if (modalCapacityStatus) {
         if (isFull) {
-            modalCapacityStatus.textContent = 'Full Capacity (Waitlist Recommended)';
+            modalCapacityStatus.textContent = 'Maximum Capacity Reached (Priority Queue Active)';
             modalCapacityStatus.style.color = '#dc2626';
         } else {
-            modalCapacityStatus.textContent = `${maxCap - curPatients} Slots Open`;
+            modalCapacityStatus.textContent = `${maxCap - curPatients} Open Consultation Slots`;
             modalCapacityStatus.style.color = '#059669';
         }
     }
 
-    if (capacityWaitlistPrompt) capacityWaitlistPrompt.style.display = 'none';
-    if (appointmentForm) appointmentForm.style.display = 'block';
+    if (isFull) {
+        if (appointmentForm) appointmentForm.style.display = 'none';
+        if (capacityWaitlistPrompt) {
+            if (capacityMessage) {
+                capacityMessage.textContent = `Dr. ${provider.name} currently has all ${maxCap}/${maxCap} patient consultation slots filled. You can join the automated priority waitlist to be automatically assigned when the next opening is created.`;
+            }
+            capacityWaitlistPrompt.style.display = 'block';
+        }
+    } else {
+        if (capacityWaitlistPrompt) capacityWaitlistPrompt.style.display = 'none';
+        if (appointmentForm) appointmentForm.style.display = 'block';
+    }
 
     modal.style.display = 'flex';
 };
@@ -893,7 +958,6 @@ async function submitAppointmentBooking() {
     const capacityWaitlistPrompt = document.getElementById('capacityWaitlistPrompt');
     const appointmentForm = document.getElementById('appointmentForm');
     const capacityMessage = document.getElementById('capacityMessage');
-    const joinWaitlistRedirectBtn = document.getElementById('joinWaitlistRedirectBtn');
 
     const patientId = currentPatient ? currentPatient.patient_id : 1;
 
@@ -915,21 +979,21 @@ async function submitAppointmentBooking() {
 
         if (response.ok) {
             bookingAlertBox.className = 'booking-alert-box success';
-            bookingAlertBox.textContent = `✓ ${data.message} (Appointment ID: #${data.appointment_id})`;
+            bookingAlertBox.innerHTML = `
+                <div><strong>✓ ${data.message}</strong></div>
+                <div style="margin-top:4px; font-size:12px;">Appointment #${data.appointment_id} confirmed for ${data.appointment_date}. Redirecting to your appointments dashboard...</div>
+                <div style="margin-top:8px;"><a href="appointments.html?booked=true&id=${data.appointment_id}" style="color:#047857; font-weight:700; text-decoration:underline;">View My Appointments Now ➔</a></div>
+            `;
             bookingAlertBox.style.display = 'block';
-            confirmBookingBtn.textContent = 'Booking Confirmed!';
+            confirmBookingBtn.textContent = 'Redirecting to Appointments...';
 
             setTimeout(() => {
-                closeBookingModal();
-                fetchFilteredProviders();
-            }, 1800);
+                window.location.href = `appointments.html?booked=true&id=${data.appointment_id}`;
+            }, 1400);
         } else if (data.is_full) {
             // Provider is at maximum capacity
             appointmentForm.style.display = 'none';
             if (capacityMessage) capacityMessage.textContent = data.error;
-            if (joinWaitlistRedirectBtn) {
-                joinWaitlistRedirectBtn.href = `waitlist.html?spec_id=${bookingSpecId}&patient_id=${patientId}`;
-            }
             if (capacityWaitlistPrompt) capacityWaitlistPrompt.style.display = 'block';
         } else {
             bookingAlertBox.className = 'booking-alert-box error';
@@ -945,6 +1009,66 @@ async function submitAppointmentBooking() {
         bookingAlertBox.style.display = 'block';
         confirmBookingBtn.disabled = false;
         confirmBookingBtn.textContent = 'Confirm Booking ➔';
+    }
+}
+
+/**
+ * Submit Direct Priority Waitlist Join
+ */
+async function submitDirectWaitlistJoin() {
+    const bookingProviderId = document.getElementById('bookingProviderId').value;
+    const bookingSpecId = document.getElementById('bookingSpecId').value;
+    const modalWaitlistCrisisInput = document.getElementById('modalWaitlistCrisisInput');
+    const submitBtn = document.getElementById('submitWaitlistDirectBtn');
+    const alertBox = document.getElementById('waitlistAlertBox');
+
+    const patientId = currentPatient ? currentPatient.patient_id : 1;
+    const crisisScore = modalWaitlistCrisisInput ? modalWaitlistCrisisInput.value : 5;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Enrolling in Priority Queue...';
+
+    try {
+        const response = await fetch('http://localhost:3000/api/waitlist/join', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                patient_id: patientId,
+                provider_id: bookingProviderId,
+                spec_id: bookingSpecId,
+                crisis_score: crisisScore
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            alertBox.className = 'booking-alert-box success';
+            alertBox.innerHTML = `
+                <div><strong>✓ ${data.message}</strong></div>
+                <div style="margin-top:4px; font-size:12px;">Waitlist #${data.waitlist_id} • Priority: <strong>${data.priority_level}</strong> (Distress Score: ${data.crisis_score}/10).</div>
+                <div style="margin-top:6px; font-size:11px; color:#047857;">Auto-escalation engine is monitoring this queue. Redirecting to your care dashboard...</div>
+            `;
+            alertBox.style.display = 'block';
+            submitBtn.textContent = 'Queued! Redirecting...';
+
+            setTimeout(() => {
+                window.location.href = `appointments.html?booked=waitlist&id=${data.waitlist_id}`;
+            }, 1600);
+        } else {
+            alertBox.className = 'booking-alert-box error';
+            alertBox.textContent = data.error || 'Failed to join priority waitlist.';
+            alertBox.style.display = 'block';
+            submitBtn.disabled = false;
+            submitBtn.textContent = '⚡ Join Priority Waitlist Now ➔';
+        }
+    } catch (err) {
+        console.error('Waitlist submission error:', err);
+        alertBox.className = 'booking-alert-box error';
+        alertBox.textContent = 'Server connection error. Please try again.';
+        alertBox.style.display = 'block';
+        submitBtn.disabled = false;
+        submitBtn.textContent = '⚡ Join Priority Waitlist Now ➔';
     }
 }
 
@@ -1018,7 +1142,7 @@ window.openDetailsModal = function(providerId) {
             ${subclassSpecificHtml}
             <div class="detail-item">
                 <div class="detail-lbl">District &amp; Location</div>
-                <div class="detail-val">📍 ${escapeHtml(provider.district_name || 'Dhaka')} (Risk Index: ${provider.risk_index || 'N/A'})</div>
+                <div class="detail-val">📍 ${escapeHtml(provider.district_name || 'Dhaka')}</div>
             </div>
             <div class="detail-item">
                 <div class="detail-lbl">Patient Slot Capacity</div>

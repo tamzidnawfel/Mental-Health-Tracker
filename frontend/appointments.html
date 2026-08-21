@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Appointments &amp; Care Schedule - MindCare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/appointments.css">
+</head>
+<body>
+
+    <!-- TOP EMERGENCY ALERT & HOTLINE BAR -->
+    <div class="top-announcement-bar">
+        <div class="bar-container">
+            <span class="pulse-indicator"></span>
+            <span class="bar-text"><strong>24/7 Crisis Support Available:</strong> Speak with a confidential crisis counselor anytime.</span>
+            <a href="tel:988" class="hotline-chip">📞 Call 988 / 017-000-MIND</a>
+        </div>
+    </div>
+
+    <!-- MAIN NAVBAR -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="brand-logo">
+                <div class="logo-icon-wrapper">
+                    <span class="logo-plus">+</span>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">MindCare</span>
+                    <span class="brand-sub">Mental Health &amp; Wellness</span>
+                </div>
+            </a>
+
+            <nav class="nav-links">
+                <a href="home.html" class="nav-link">Home</a>
+                <a href="directory.html" class="nav-link">Find Doctors &amp; Clinics</a>
+                <a href="appointments.html" class="nav-link active">My Appointments</a>
+                <a href="waitlist.html" class="nav-link">Waitlist Tracker</a>
+            </nav>
+
+            <div class="nav-user-actions">
+                <div class="user-profile-pill" id="userProfilePill">
+                    <div class="user-avatar" id="userAvatar">P</div>
+                    <div class="user-info">
+                        <span class="user-greeting">Patient Portal</span>
+                        <span class="user-name" id="navPatientName">Loading...</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-logout" id="logoutBtn" title="Log out from MindCare">
+                    <span>Logout</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="appointments-main">
+        <!-- HERO BANNER -->
+        <section class="hero-banner">
+            <div class="hero-inner">
+                <div class="hero-badge">
+                    <span class="badge-icon">🌿</span>
+                    <span>Patient Care &amp; Booking Dashboard</span>
+                </div>
+                <div class="hero-header-row">
+                    <div>
+                        <h1 class="hero-title">My Appointments &amp; Care Schedule</h1>
+                        <p class="hero-subtitle">
+                            View, reschedule, or cancel your consultations with licensed psychologists and psychiatric clinics. Track active waitlist requests and automated priority queues.
+                        </p>
+                    </div>
+                    <a href="directory.html" class="btn-book-new-hero">
+                        <span>+ Book New Appointment</span>
+                    </a>
+                </div>
+
+                <!-- Summary Metrics Grid -->
+                <div class="stats-overview-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon icon-blue">📋</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="statTotalAppointments">0</span>
+                            <span class="stat-label">Total Bookings</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-green">📅</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="statUpcomingConfirmed">0</span>
+                            <span class="stat-label">Upcoming / Confirmed</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-amber">⏳</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="statActiveWaitlist">0</span>
+                            <span class="stat-label">Active Waitlist Requests</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon icon-purple">✅</div>
+                        <div class="stat-info">
+                            <span class="stat-num" id="statCompleted">0</span>
+                            <span class="stat-label">Completed Sessions</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- BOOKING SUCCESS BANNER (Shown if arrived via URL param ?booked=true) -->
+        <div class="booking-success-toast-banner" id="justBookedBanner" style="display: none;">
+            <div class="banner-icon">🎉</div>
+            <div class="banner-text">
+                <strong>Appointment Successfully Booked!</strong>
+                <span id="justBookedMessage">Your new appointment has been scheduled and confirmed in our database.</span>
+            </div>
+            <button type="button" class="btn-close-banner" id="closeJustBookedBannerBtn">✕</button>
+        </div>
+
+        <!-- DASHBOARD CONTENT SECTION -->
+        <section class="dashboard-section">
+            <div class="dashboard-card">
+                <!-- Toolbar: Search & Tab filters -->
+                <div class="dashboard-toolbar">
+                    <div class="search-input-wrapper">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="appointmentSearch" placeholder="Search by doctor name, clinic, specialization, or ID...">
+                        <button type="button" class="btn-clear-search" id="clearSearchBtn" style="display: none;">✕</button>
+                    </div>
+
+                    <div class="filter-tabs" id="statusFilterTabs">
+                        <button type="button" class="tab-pill active" data-filter="all">
+                            <span>All Records</span>
+                            <span class="tab-count" id="tabCountAll">0</span>
+                        </button>
+                        <button type="button" class="tab-pill" data-filter="confirmed">
+                            <span>📅 Confirmed</span>
+                            <span class="tab-count" id="tabCountConfirmed">0</span>
+                        </button>
+                        <button type="button" class="tab-pill" data-filter="waitlist">
+                            <span>⏳ Waitlist</span>
+                            <span class="tab-count" id="tabCountWaitlist">0</span>
+                        </button>
+                        <button type="button" class="tab-pill" data-filter="completed">
+                            <span>✅ Completed</span>
+                            <span class="tab-count" id="tabCountCompleted">0</span>
+                        </button>
+                        <button type="button" class="tab-pill" data-filter="cancelled">
+                            <span>❌ Cancelled</span>
+                            <span class="tab-count" id="tabCountCancelled">0</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Appointments and Care Cards Grid -->
+                <div class="cards-container" id="appointmentsContainer">
+                    <div class="loading-state">
+                        <div class="spinner"></div>
+                        <p>Loading your appointments and care records...</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- RESCHEDULE APPOINTMENT MODAL -->
+    <div class="modal-backdrop" id="rescheduleModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon">🗓️</span>
+                    <div>
+                        <h3>Reschedule Appointment</h3>
+                        <span class="modal-provider-sub" id="rescheduleProviderSub">Select a new consultation date</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" id="closeRescheduleModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="rescheduleForm">
+                    <input type="hidden" id="rescheduleAppointmentId">
+
+                    <div class="booking-summary-box">
+                        <div class="summary-item">
+                            <span class="sum-label">Healthcare Provider:</span>
+                            <span class="sum-value" id="rescheduleProviderName">Doctor Name</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="sum-label">Current Date:</span>
+                            <span class="sum-value" id="rescheduleCurrentDate">2026-08-26</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="sum-label">Location:</span>
+                            <span class="sum-value" id="rescheduleLocation">Dhaka Central</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group" style="margin-top: 18px;">
+                        <label for="newAppointmentDateInput">Choose New Consultation Date</label>
+                        <input type="date" id="newAppointmentDateInput" required>
+                        <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">You can select any date starting from tomorrow.</small>
+                    </div>
+
+                    <div class="modal-alert-box" id="rescheduleAlertBox" style="display: none;"></div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary-modal" id="cancelRescheduleBtn">Cancel</button>
+                        <button type="submit" class="btn-primary-modal" id="confirmRescheduleBtn">Save New Date ➔</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- CANCEL APPOINTMENT CONFIRMATION MODAL -->
+    <div class="modal-backdrop" id="cancelModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon" style="background:#fee2e2; color:#b91c1c;">⚠️</span>
+                    <div>
+                        <h3 style="color:#991b1b;">Cancel Appointment</h3>
+                        <span class="modal-provider-sub">Confirm appointment cancellation</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" id="closeCancelModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="cancelAppointmentId">
+                <p style="font-size: 14px; color: var(--text-main); margin-bottom: 16px;">
+                    Are you sure you want to cancel your scheduled appointment with <strong id="cancelProviderName">Doctor Name</strong> on <strong id="cancelAppointmentDate">2026-08-26</strong>?
+                </p>
+                <div style="background:#fef2f2; border: 1px solid #fecdd3; padding: 12px 16px; border-radius: var(--radius-md); font-size: 12px; color: #991b1b; margin-bottom: 20px;">
+                    ℹ️ Cancelling this appointment will release your reserved slot back to the clinic's open capacity and remove it from active doctor scheduling.
+                </div>
+
+                <div class="modal-alert-box" id="cancelAlertBox" style="display: none;"></div>
+
+                <div class="modal-actions">
+                    <button type="button" class="btn-secondary-modal" id="closeCancelActionBtn">Keep Appointment</button>
+                    <button type="button" class="btn-danger-modal" id="confirmCancelBtn">Yes, Cancel Appointment</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UPDATE WAITLIST CRISIS SCORE MODAL -->
+    <div class="modal-backdrop" id="crisisModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon">⚡</span>
+                    <div>
+                        <h3>Update Crisis Assessment</h3>
+                        <span class="modal-provider-sub">Self-reported distress score &amp; automated queue priority</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" id="closeCrisisModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="crisisForm">
+                    <input type="hidden" id="crisisWaitlistId">
+
+                    <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 16px;">
+                        If your symptoms have worsened while waiting, update your self-reported distress score to escalate your position in the clinical queue.
+                    </p>
+
+                    <div class="crisis-slider-card">
+                        <div class="crisis-label-row">
+                            <label for="crisisRangeInput">Distress Score (1 = Mild, 10 = Severe Crisis):</label>
+                            <span class="crisis-value-badge" id="crisisScoreDisplay">7</span>
+                        </div>
+                        <input type="range" id="crisisRangeInput" min="1" max="10" step="1" value="7">
+                        <div class="crisis-priority-preview">
+                            <span>Automated Priority Level:</span>
+                            <span class="priority-badge high" id="crisisPriorityPreview">HIGH PRIORITY</span>
+                        </div>
+                    </div>
+
+                    <div class="modal-alert-box" id="crisisAlertBox" style="display: none;"></div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary-modal" id="cancelCrisisBtn">Cancel</button>
+                        <button type="submit" class="btn-primary-modal" id="confirmCrisisBtn">Update Priority ➔</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- PROVIDER DETAILS MODAL -->
+    <div class="modal-backdrop" id="detailsModal" style="display: none;">
+        <div class="modal-card modal-card-large">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon" id="detailIcon">🩺</span>
+                    <div>
+                        <h3 id="detailName">Healthcare Provider</h3>
+                        <span class="modal-provider-sub" id="detailSubtitle">Licensed Clinical Specialist</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" id="closeDetailsModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="details-grid-layout" id="detailContent">
+                    <!-- Dynamic detailed info -->
+                </div>
+                <div class="modal-actions" style="margin-top: 24px;">
+                    <button type="button" class="btn-secondary-modal" id="closeDetailActionBtn">Close</button>
+                    <a href="directory.html" class="btn-primary-modal">Book Another Appointment ➔</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div class="toast-notification" id="toast"></div>
+
+    <!-- FOOTER -->
+    <footer class="site-footer">
+        <div class="footer-container">
+            <div class="footer-col brand-col">
+                <div class="brand-logo">
+                    <div class="logo-icon-wrapper">
+                        <span class="logo-plus">+</span>
+                    </div>
+                    <span class="brand-name">MindCare</span>
+                </div>
+                <p class="footer-desc">Your dedicated mental health platform for verified psychological care, therapy matching, and priority support in Bangladesh.</p>
+            </div>
+
+            <div class="footer-col">
+                <h4>Patient Portal</h4>
+                <ul>
+                    <li><a href="home.html">Home Dashboard</a></li>
+                    <li><a href="directory.html">Doctor &amp; Therapist Directory</a></li>
+                    <li><a href="appointments.html">My Scheduled Appointments</a></li>
+                    <li><a href="waitlist.html">Priority Waitlist Tracker</a></li>
+                </ul>
+            </div>
+
+            <div class="footer-col">
+                <h4>24/7 Crisis Support</h4>
+                <ul class="contact-list">
+                    <li>📞 <strong>National Helpline:</strong> 988</li>
+                    <li>📱 <strong>MindCare Emergency:</strong> 017-000-MIND</li>
+                    <li>💬 <strong>Confidential Consolation:</strong> 24/7 Active</li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 MindCare Mental Health System. Built for compassion, privacy, and healing.</p>
+        </div>
+    </footer>
+
+    <script src="js/appointments.js"></script>
+</body>
+</html>

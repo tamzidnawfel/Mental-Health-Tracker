@@ -589,7 +589,428 @@ app.post('/api/appointments', (req, res) => {
     });
 });
 
+// Fetch All Appointments and Waitlist Records for a Specific Patient
+app.get('/api/patient/:id/appointments', (req, res) => {
+    const patientId = parseInt(req.params.id, 10);
+    if (!patientId || isNaN(patientId)) {
+        return res.status(400).json({ error: 'Invalid patient ID provided.' });
+    }
+
+    runWaitlistAutoEscalation(() => {
+        const patientSql = 'SELECT patient_id, name, email, phone, city, preferred_language FROM PATIENT WHERE patient_id = ?';
+    
+    const appointmentsSql = `
+        SELECT 
+            a.appointment_id,
+            a.patient_id,
+            a.provider_id,
+            a.referral_id,
+            DATE_FORMAT(a.appointment_date, '%Y-%m-%d') AS appointment_date,
+            a.status,
+            p.name AS provider_name,
+            p.session_fee,
+            p.rating_avg,
+            p.accepts_insurance,
+            p.district_id,
+            r.district_name,
+            CASE 
+                WHEN t.provider_id IS NOT NULL THEN 'therapist'
+                WHEN c.provider_id IS NOT NULL THEN 'clinic'
+                ELSE 'therapist'
+            END AS provider_type,
+            t.license_no,
+            t.years_of_experience,
+            c.registration_no,
+            c.total_beds,
+            COALESCE(GROUP_CONCAT(DISTINCT s.spec_name ORDER BY s.spec_name SEPARATOR ', '), '') AS specializations,
+            COALESCE(GROUP_CONCAT(DISTINCT l.language_name ORDER BY l.language_name SEPARATOR ', '), '') AS languages
+        FROM APPOINTMENTS a
+        JOIN PROVIDER p ON a.provider_id = p.provider_id
+        LEFT JOIN REGION r ON p.district_id = r.district_id
+        LEFT JOIN THERAPISTS t ON p.provider_id = t.provider_id
+        LEFT JOIN CLINICS c ON p.provider_id = c.provider_id
+        LEFT JOIN PROVIDER_SPECIALIZATIONS ps ON p.provider_id = ps.provider_id
+        LEFT JOIN SPECIALIZATION s ON ps.spec_id = s.spec_id
+        LEFT JOIN PROVIDER_LANGUAGES pl ON p.provider_id = pl.provider_id
+        LEFT JOIN LANGUAGES l ON pl.language_code = l.language_code
+        WHERE a.patient_id = ?
+        GROUP BY a.appointment_id
+        ORDER BY a.appointment_date DESC, a.appointment_id DESC
+    `;
+
+    const waitlistSql = `
+        SELECT 
+            w.waitlist_id,
+            w.patient_id,
+            w.spec_id,
+            DATE_FORMAT(w.request_date, '%Y-%m-%d') AS request_date,
+            DATEDIFF(CURDATE(), w.request_date) AS days_waiting,
+            w.crisis_score,
+            CASE 
+                WHEN w.status = 'Cancelled' THEN w.priority_level
+                WHEN w.crisis_score >= 9 OR DATEDIFF(CURDATE(), w.request_date) >= 6 THEN 'CRITICAL'
+                WHEN w.crisis_score >= 7 OR DATEDIFF(CURDATE(), w.request_date) >= 4 THEN 'HIGH'
+                WHEN w.crisis_score >= 4 OR DATEDIFF(CURDATE(), w.request_date) >= 2 THEN 'MODERATE'
+                ELSE 'ROUTINE'
+            END AS priority_level,
+            w.status,
+            s.spec_name AS specialization_name
+        FROM WAITLIST w
+        LEFT JOIN SPECIALIZATION s ON w.spec_id = s.spec_id
+        WHERE w.patient_id = ?
+        ORDER BY w.request_date DESC, w.waitlist_id DESC
+    `;
+
+    db.query(patientSql, [patientId], (pErr, pRows) => {
+        const patient = pRows && pRows.length > 0 ? pRows[0] : { patient_id: patientId, name: 'Patient' };
+
+        db.query(appointmentsSql, [patientId], (aErr, appointments) => {
+            if (aErr) {
+                console.error('Error fetching patient appointments:', aErr);
+                return res.status(500).json({ error: 'Failed to retrieve appointments.' });
+            }
+
+            db.query(waitlistSql, [patientId], (wErr, waitlistRows) => {
+                if (wErr) {
+                    console.error('Error fetching patient waitlist:', wErr);
+                    return res.status(500).json({ error: 'Failed to retrieve waitlist entries.' });
+                }
+
+                const apts = appointments || [];
+                const wl = waitlistRows || [];
+
+                let confirmedCount = 0;
+                let completedCount = 0;
+                let cancelledCount = 0;
+
+                apts.forEach(a => {
+                    const st = (a.status || '').toLowerCase();
+                    if (st === 'confirmed' || st === 'scheduled' || st === 'active') confirmedCount++;
+                    else if (st === 'completed') completedCount++;
+                    else if (st === 'cancelled') cancelledCount++;
+                });
+
+                const activeWaitlistCount = wl.filter(w => (w.status || '').toLowerCase() === 'active').length;
+
+                res.status(200).json({
+                    patient,
+                    stats: {
+                        total_appointments: apts.length,
+                        upcoming_confirmed: confirmedCount,
+                        active_waitlist: activeWaitlistCount,
+                        completed: completedCount,
+                        cancelled: cancelledCount
+                    },
+                    appointments: apts,
+                    waitlist: wl
+                });
+            });
+        });
+    });
+    });
+});
+
+// Reschedule Appointment Date
+app.put('/api/appointments/:id/reschedule', (req, res) => {
+    const appointmentId = parseInt(req.params.id, 10);
+    const { appointment_date } = req.body;
+
+    if (!appointmentId || !appointment_date) {
+        return res.status(400).json({ error: 'Appointment ID and new appointment date are required.' });
+    }
+
+    const sql = "UPDATE APPOINTMENTS SET appointment_date = ?, status = 'Confirmed' WHERE appointment_id = ?";
+    db.query(sql, [appointment_date, appointmentId], (err, result) => {
+        if (err) {
+            console.error('Error rescheduling appointment:', err);
+            return res.status(500).json({ error: 'Database update failed.' });
+        }
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Appointment record not found.' });
+        }
+
+        res.status(200).json({
+            message: 'Appointment date successfully rescheduled!',
+            appointment_id: appointmentId,
+            appointment_date,
+            status: 'Confirmed'
+        });
+    });
+});
+
+// Cancel Appointment (and decrement provider current_patients count)
+app.put('/api/appointments/:id/cancel', (req, res) => {
+    const appointmentId = parseInt(req.params.id, 10);
+    if (!appointmentId) {
+        return res.status(400).json({ error: 'Valid appointment ID required.' });
+    }
+
+    // Get provider_id first to adjust capacity
+    const findSql = 'SELECT appointment_id, provider_id, status FROM APPOINTMENTS WHERE appointment_id = ?';
+    db.query(findSql, [appointmentId], (findErr, rows) => {
+        if (findErr || !rows || rows.length === 0) {
+            return res.status(404).json({ error: 'Appointment record not found.' });
+        }
+
+        const apt = rows[0];
+        const prevStatus = apt.status;
+        const providerId = apt.provider_id;
+
+        const cancelSql = "UPDATE APPOINTMENTS SET status = 'Cancelled' WHERE appointment_id = ?";
+        db.query(cancelSql, [appointmentId], (updErr, updRes) => {
+            if (updErr) {
+                console.error('Error cancelling appointment:', updErr);
+                return res.status(500).json({ error: 'Failed to cancel appointment.' });
+            }
+
+            // Only decrement capacity if it was previously confirmed/active
+            if (prevStatus !== 'Cancelled' && providerId) {
+                db.query('UPDATE PROVIDER SET current_patients = GREATEST(0, current_patients - 1) WHERE provider_id = ?', [providerId]);
+            }
+
+            res.status(200).json({
+                message: 'Appointment successfully cancelled.',
+                appointment_id: appointmentId,
+                status: 'Cancelled'
+            });
+        });
+    });
+});
+
+// Automated Waitlist Escalation Engine
+// Auto-escalates patient priority:
+// > 2 Days (Day 3-4): ROUTINE -> MODERATE
+// > 4 Days (Day 5-6): MODERATE -> HIGH
+// > 6 Days (Day 7+):  HIGH -> CRITICAL
+// or if crisis_score >= 9 -> CRITICAL
+function runWaitlistAutoEscalation(callback) {
+    const sql = `
+        UPDATE WAITLIST
+        SET priority_level = CASE
+            WHEN crisis_score >= 9 OR DATEDIFF(CURDATE(), request_date) >= 6 THEN 'CRITICAL'
+            WHEN crisis_score >= 7 OR DATEDIFF(CURDATE(), request_date) >= 4 THEN 'HIGH'
+            WHEN crisis_score >= 4 OR DATEDIFF(CURDATE(), request_date) >= 2 THEN 'MODERATE'
+            ELSE 'ROUTINE'
+        END
+        WHERE status = 'Active'
+    `;
+
+    db.query(sql, (err, result) => {
+        if (err) {
+            console.error('Waitlist auto-escalation error:', err);
+        } else if (result && result.changedRows > 0) {
+            console.log(`Auto-Escalation Engine: ${result.changedRows} waitlist record(s) escalated due to elapsed queue duration.`);
+        }
+        if (callback) callback(err, result);
+    });
+}
+
+// Run auto-escalation every 30 minutes
+setInterval(runWaitlistAutoEscalation, 30 * 60 * 1000);
+
+// Fetch All Priority Waitlist Records (with automated escalation applied)
+app.get('/api/waitlist', (req, res) => {
+    runWaitlistAutoEscalation(() => {
+        const sql = `
+            SELECT 
+                w.waitlist_id,
+                w.patient_id,
+                p.name AS patient_name,
+                p.email AS patient_email,
+                p.phone AS patient_phone,
+                p.city AS patient_city,
+                w.spec_id,
+                s.spec_name AS specialization_name,
+                DATE_FORMAT(w.request_date, '%Y-%m-%d') AS request_date,
+                DATEDIFF(CURDATE(), w.request_date) AS days_waiting,
+                w.crisis_score,
+                CASE 
+                    WHEN w.status = 'Cancelled' THEN w.priority_level
+                    WHEN w.crisis_score >= 9 OR DATEDIFF(CURDATE(), w.request_date) >= 6 THEN 'CRITICAL'
+                    WHEN w.crisis_score >= 7 OR DATEDIFF(CURDATE(), w.request_date) >= 4 THEN 'HIGH'
+                    WHEN w.crisis_score >= 4 OR DATEDIFF(CURDATE(), w.request_date) >= 2 THEN 'MODERATE'
+                    ELSE 'ROUTINE'
+                END AS priority_level,
+                w.status,
+                CASE 
+                    WHEN DATEDIFF(CURDATE(), w.request_date) >= 2 THEN 1
+                    ELSE 0
+                END AS is_time_escalated
+            FROM WAITLIST w
+            JOIN PATIENT p ON w.patient_id = p.patient_id
+            LEFT JOIN SPECIALIZATION s ON w.spec_id = s.spec_id
+            ORDER BY 
+                CASE w.status
+                    WHEN 'Active' THEN 1
+                    WHEN 'Assigned' THEN 2
+                    WHEN 'Cancelled' THEN 3
+                    ELSE 4
+                END,
+                CASE w.priority_level
+                    WHEN 'CRITICAL' THEN 1
+                    WHEN 'HIGH' THEN 2
+                    WHEN 'MODERATE' THEN 3
+                    WHEN 'ROUTINE' THEN 4
+                    ELSE 5
+                END,
+                w.days_waiting DESC,
+                w.waitlist_id ASC
+        `;
+
+        db.query(sql, (err, results) => {
+            if (err) {
+                console.error('Error loading waitlist:', err);
+                return res.status(500).json({ error: 'Failed to load waitlist data.' });
+            }
+
+            res.status(200).json(results || []);
+        });
+    });
+});
+
+// Join Priority Waitlist (When doctor/clinic capacity is full or direct queue request)
+app.post('/api/waitlist/join', (req, res) => {
+    const { patient_id, spec_id, provider_id, crisis_score } = req.body;
+
+    if (!patient_id) {
+        return res.status(400).json({ error: 'Patient ID is required to join waitlist.' });
+    }
+
+    // Determine specialization ID if provider_id was passed instead
+    const resolveSpec = (cb) => {
+        if (spec_id) return cb(parseInt(spec_id, 10));
+        if (provider_id) {
+            db.query('SELECT spec_id FROM PROVIDER_SPECIALIZATIONS WHERE provider_id = ? LIMIT 1', [provider_id], (err, rows) => {
+                if (!err && rows && rows.length > 0) return cb(rows[0].spec_id);
+                return cb(1);
+            });
+        } else {
+            return cb(1);
+        }
+    };
+
+    resolveSpec((resolvedSpecId) => {
+        const scoreNum = Math.min(10, Math.max(1, parseInt(crisis_score || 5, 10)));
+        let priorityLevel = 'ROUTINE';
+        if (scoreNum >= 9) priorityLevel = 'CRITICAL';
+        else if (scoreNum >= 7) priorityLevel = 'HIGH';
+        else if (scoreNum >= 4) priorityLevel = 'MODERATE';
+
+        // Check if patient already has an active waitlist request for this specialization
+        const checkActiveSql = 'SELECT waitlist_id FROM WAITLIST WHERE patient_id = ? AND spec_id = ? AND status = "Active"';
+        db.query(checkActiveSql, [patient_id, resolvedSpecId], (checkErr, checkRows) => {
+            if (!checkErr && checkRows && checkRows.length > 0) {
+                // Update existing active entry's crisis score & trigger escalation
+                const existingId = checkRows[0].waitlist_id;
+                db.query('UPDATE WAITLIST SET crisis_score = ?, priority_level = ? WHERE waitlist_id = ?', [scoreNum, priorityLevel, existingId], () => {
+                    return res.status(200).json({
+                        message: 'You are already in the priority queue. Your distress score and priority level have been updated!',
+                        waitlist_id: existingId,
+                        priority_level: priorityLevel,
+                        spec_id: resolvedSpecId
+                    });
+                });
+                return;
+            }
+
+            // Insert new waitlist record
+            const insertSql = 'INSERT INTO WAITLIST (patient_id, spec_id, request_date, crisis_score, priority_level, status) VALUES (?, ?, CURDATE(), ?, ?, "Active")';
+            db.query(insertSql, [patient_id, resolvedSpecId, scoreNum, priorityLevel], (insErr, insRes) => {
+                if (insErr) {
+                    console.error('Error joining waitlist:', insErr);
+                    return res.status(500).json({ error: 'Failed to join priority waitlist.' });
+                }
+
+                console.log(`Patient #${patient_id} queued into Priority Waitlist #${insRes.insertId} (Spec #${resolvedSpecId}, Score: ${scoreNum}, Priority: ${priorityLevel})`);
+
+                res.status(200).json({
+                    message: 'Successfully queued into the automated priority waitlist!',
+                    waitlist_id: insRes.insertId,
+                    patient_id,
+                    spec_id: resolvedSpecId,
+                    crisis_score: scoreNum,
+                    priority_level: priorityLevel,
+                    request_date: new Date().toISOString().split('T')[0],
+                    status: 'Active'
+                });
+            });
+        });
+    });
+});
+
+// Alias for POST /api/waitlist
+app.post('/api/waitlist', (req, res) => {
+    req.url = '/api/waitlist/join';
+    app.handle(req, res);
+});
+
+// General Update for Waitlist (Crisis Score and/or Status like Assigned/Cancelled)
+app.put('/api/waitlist/:id', (req, res) => {
+    const waitlistId = parseInt(req.params.id, 10);
+    const { crisis_score, status } = req.body;
+
+    if (!waitlistId) {
+        return res.status(400).json({ error: 'Valid waitlist ID required.' });
+    }
+
+    const updates = [];
+    const params = [];
+
+    if (crisis_score !== undefined) {
+        const scoreNum = Math.min(10, Math.max(1, parseInt(crisis_score, 10)));
+        let priorityLevel = 'ROUTINE';
+        if (scoreNum >= 9) priorityLevel = 'CRITICAL';
+        else if (scoreNum >= 7) priorityLevel = 'HIGH';
+        else if (scoreNum >= 4) priorityLevel = 'MODERATE';
+
+        updates.push('crisis_score = ?', 'priority_level = ?');
+        params.push(scoreNum, priorityLevel);
+    }
+
+    if (status) {
+        updates.push('status = ?');
+        params.push(status);
+    }
+
+    if (updates.length === 0) {
+        return res.status(400).json({ error: 'No update parameters provided.' });
+    }
+
+    params.push(waitlistId);
+    const sql = `UPDATE WAITLIST SET ${updates.join(', ')} WHERE waitlist_id = ?`;
+
+    db.query(sql, params, (err, result) => {
+        if (err) {
+            console.error('Error updating waitlist entry:', err);
+            return res.status(500).json({ error: 'Failed to update waitlist entry.' });
+        }
+
+        runWaitlistAutoEscalation(() => {
+            res.status(200).json({
+                message: 'Waitlist entry updated successfully.',
+                waitlist_id: waitlistId,
+                status: status || 'Active'
+            });
+        });
+    });
+});
+
+// Update Waitlist Crisis Score & Automated Priority
+app.put('/api/waitlist/:id/crisis', (req, res) => {
+    req.url = `/api/waitlist/${req.params.id}`;
+    app.handle(req, res);
+});
+
+// Cancel Waitlist Request
+app.put('/api/waitlist/:id/cancel', (req, res) => {
+    req.body = { status: 'Cancelled' };
+    req.url = `/api/waitlist/${req.params.id}`;
+    app.handle(req, res);
+});
+
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    // Run initial auto-escalation check on server startup
+    runWaitlistAutoEscalation();
 });
