@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zone Detector - MindCare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/zone-detections.css">
+</head>
+
+<body>
+
+    <!-- MindCare Navigation Header -->
+    <header>
+        <div class="logo">
+            <div class="logo-icon">+</div>
+            MindCare
+        </div>
+        <nav>
+            <a href="#" class="nav-home-link">← Home</a>
+        </nav>
+    </header>
+
+    <!-- Hero Banner -->
+    <section class="hero-banner">
+        <h1>Zone Detector</h1>
+        <p>Analyzes regional demographics against available mental health resources to identify geographical zones with
+            shortages of care.</p>
+    </section>
+
+    <!-- Main Content Container -->
+    <main class="main-wrapper">
+
+        <!-- Summary Metric Cards -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper red">
+                    🚨
+                </div>
+                <div class="stat-info">
+                    <h3 id="statRedZones">0</h3>
+                    <p>Critical Red Zones</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper yellow">
+                    ⚠️
+                </div>
+                <div class="stat-info">
+                    <h3 id="statYellowZones">0</h3>
+                    <p>Moderate Yellow Zones</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper green">
+                    ✅
+                </div>
+                <div class="stat-info">
+                    <h3 id="statGreenZones">0</h3>
+                    <p>Adequate Green Zones</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Full-Width Analysis Dashboard Panel -->
+        <section class="dashboard-panel">
+
+            <div class="panel-header">
+                <div class="panel-header-title">
+                    <h2>
+                        <span>📊</span> Regional Provider-to-Population Ratio Analysis
+                    </h2>
+                    <p>Evaluating regional provider ratios and district populations.</p>
+                </div>
+            </div>
+
+            <!-- Toolbar: Zone Filter & Shortage Ratio Sorting -->
+            <div class="toolbar">
+                <div class="filter-group">
+                    <label for="flagFilter" class="filter-label">Filter Zone:</label>
+                    <select id="flagFilter" class="filter-select">
+                        <option value="ALL">All Zones</option>
+                        <option value="RED">🔴 Red Zone</option>
+                        <option value="YELLOW">🟡 Yellow Zone</option>
+                        <option value="GREEN">🟢 Green Zone</option>
+                    </select>
+
+                    <label for="sortBy" class="filter-label" style="margin-left: 0.5rem;">Sort Ratio:</label>
+                    <select id="sortBy" class="filter-select">
+                        <option value="ratio_desc">Highest Shortage Ratio</option>
+                        <option value="ratio_asc">Lowest Shortage Ratio</option>
+                    </select>
+
+                    <button id="refreshBtn" class="btn-refresh" title="Reload regional analytics">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table Responsive Container -->
+            <div class="table-responsive">
+                <table class="zone-table">
+                    <thead>
+                        <tr>
+                            <th>District Name</th>
+                            <th>Population</th>
+                            <th>Active Providers</th>
+                            <th>Population : Provider Ratio</th>
+                            <th>Flag</th>
+                        </tr>
+                    </thead>
+                    <tbody id="zoneTableBody">
+                        <tr>
+                            <td colspan="5" class="empty-state">
+                                <div class="empty-icon">⏳</div>
+                                <p>Loading zone analysis from database...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Zone Definitions Legend -->
+            <div class="benchmark-card">
+                <div class="benchmark-item">
+                    <span class="benchmark-dot red"></span>
+                    <span><strong>Red Zone:</strong> Critical shortage (Ratio &gt; 1:500,000 residents per provider or 0
+                        providers).</span>
+                </div>
+                <br>
+                <div class="benchmark-item">
+                    <span class="benchmark-dot yellow"></span>
+                    <span><strong>Yellow Zone:</strong> Moderate shortage (Ratio 1:250,000 &ndash; 1:500,000 residents
+                        per provider).</span>
+                </div>
+                <br>
+                <div class="benchmark-item">
+                    <span class="benchmark-dot green"></span>
+                    <span><strong>Green Zone:</strong> Adequate coverage (&le; 1:250,000 residents per provider).</span>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script src="js/zone-detections.js"></script>
+</body>
+
+</html>

@@ -313,7 +313,7 @@ app.get('/api/specializations', (req, res) => {
 
 // Fetch regions / districts
 app.get('/api/regions', (req, res) => {
-    const sql = 'SELECT district_id, district_name, population, risk_index FROM REGION ORDER BY district_id ASC';
+    const sql = 'SELECT district_id, district_name, population FROM REGION ORDER BY district_id ASC';
     db.query(sql, (err, results) => {
         if (err) {
             console.error('Error fetching regions:', err);
@@ -337,7 +337,7 @@ app.get('/api/languages', (req, res) => {
 
 // Fetch Directory Metadata (Combined regions, specializations, languages, fee stats)
 app.get('/api/directory/meta', (req, res) => {
-    const regionsSql = 'SELECT district_id, district_name, population, risk_index FROM REGION ORDER BY district_id ASC';
+    const regionsSql = 'SELECT district_id, district_name, population FROM REGION ORDER BY district_id ASC';
     const specsSql = 'SELECT spec_id, spec_name FROM SPECIALIZATION ORDER BY spec_id ASC';
     const langsSql = 'SELECT language_code, language_name FROM LANGUAGES ORDER BY language_code ASC';
     const statsSql = `
@@ -482,7 +482,6 @@ app.get('/api/directory', (req, res) => {
             p.accepts_insurance,
             p.district_id,
             r.district_name,
-            r.risk_index,
             CASE 
                 WHEN t.provider_id IS NOT NULL THEN 'therapist'
                 WHEN c.provider_id IS NOT NULL THEN 'clinic'
@@ -1001,10 +1000,65 @@ app.put('/api/waitlist/:id/crisis', (req, res) => {
     app.handle(req, res);
 });
 
-// Cancel Waitlist Request
-app.put('/api/waitlist/:id/cancel', (req, res) => {
-    req.body = { status: 'Cancelled' };
-    req.url = `/api/waitlist/${req.params.id}`;
+// Feature 7: Zone Detector (Analytical Demographics & Provider Ratio Query)
+// Analyzes regional demographics against available mental health resources to identify geographical zones with shortages
+app.get('/api/zone-detections', (req, res) => {
+    const sql = `
+        SELECT 
+            r.district_id,
+            r.district_name,
+            r.population,
+            COUNT(p.provider_id) AS total_providers,
+            COUNT(t.provider_id) AS total_therapists,
+            COUNT(c.provider_id) AS total_clinics,
+            COUNT(h.provider_id) AS total_hotlines,
+            COALESCE(SUM(p.max_capacity), 0) AS total_capacity,
+            COALESCE(SUM(p.current_patients), 0) AS total_active_patients,
+            CASE 
+                WHEN COUNT(p.provider_id) = 0 THEN r.population 
+                ELSE ROUND(r.population / COUNT(p.provider_id)) 
+            END AS population_per_provider,
+            ROUND((COUNT(p.provider_id) * 100000.0) / NULLIF(r.population, 0), 2) AS providers_per_100k,
+            CASE 
+                WHEN COUNT(p.provider_id) = 0 
+                     OR (r.population / NULLIF(COUNT(p.provider_id), 0)) >= 500000 
+                THEN 'RED'
+                WHEN (r.population / NULLIF(COUNT(p.provider_id), 0)) >= 250000 
+                THEN 'YELLOW'
+                ELSE 'GREEN'
+            END AS zone_flag
+        FROM REGION r
+        LEFT JOIN PROVIDER p ON r.district_id = p.district_id
+        LEFT JOIN THERAPISTS t ON p.provider_id = t.provider_id
+        LEFT JOIN CLINICS c ON p.provider_id = c.provider_id
+        LEFT JOIN HOTLINES h ON p.provider_id = h.provider_id
+        GROUP BY r.district_id, r.district_name, r.population
+        ORDER BY 
+            CASE 
+                WHEN COUNT(p.provider_id) = 0 
+                     OR (r.population / NULLIF(COUNT(p.provider_id), 0)) >= 500000 THEN 1
+                WHEN (r.population / NULLIF(COUNT(p.provider_id), 0)) >= 250000 THEN 2
+                ELSE 3
+            END ASC,
+            population_per_provider DESC;
+    `;
+
+    db.query(sql, (err, results) => {
+        if (err) {
+            console.error('Zone detection analytical query error:', err);
+            return res.status(500).json({ error: 'Failed to run zone detection analytical query.' });
+        }
+
+        res.status(200).json({
+            total_districts: results.length,
+            zones: results
+        });
+    });
+});
+
+// Alias for /api/zone-detection
+app.get('/api/zone-detection', (req, res) => {
+    req.url = '/api/zone-detections';
     app.handle(req, res);
 });
 
@@ -1013,4 +1067,4 @@ app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     // Run initial auto-escalation check on server startup
     runWaitlistAutoEscalation();
-});
+});
