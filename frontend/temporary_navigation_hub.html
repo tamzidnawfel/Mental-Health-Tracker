@@ -164,56 +164,20 @@
   </div>
 
   <script>
-    // =========================================================================
-    // ADD YOUR NEW PAGES HERE
-    // =========================================================================
-    const pages = [
-      { 
-        title: "Home / Landing", 
-        path: "pages/home.html", 
-        description: "Main marketing landing page layout." 
-      },
-      { 
-        title: "User Dashboard", 
-        path: "pages/dashboard.html", 
-        description: "Analytics and user metrics overview." 
-      },
-      { 
-        title: "Account Settings", 
-        path: "pages/settings/profile.html", 
-        description: "User profile editing and password resets." 
-      },
-      {
-        title: "directory",
-        path: "/home.html",
-        description: "",
-      },
-      {
-        title: index,
-        path: "/index.html",
-        description: ""
-      },
-      {
-        title: patient-login,
-        path: "/patient-login.html",
-        description: ""
-      },
-      {
-        title: provider,
-        path: "/provider.html",
-        description: ""
-      },
-      {
-        title: register,
-        path: "/register.html",
-        description: "",
-      },
-      {
-        
-      }
+    let pagesData = []; // Store fetched pages globally for search filtering
 
-    ];
-    // =========================================================================
+    // Fetch dynamic HTML pages from your Node backend
+    fetch('http://localhost:3000/api/pages')
+      .then(res => res.json())
+      .then(pages => {
+        pagesData = pages.sort((a, b) => b.mtime - a.mtime); // Save data for searching, newest first
+        renderPages(pagesData); // Render the cards
+      })
+      .catch(err => {
+        console.error('Error scanning pages:', err);
+        document.getElementById('pages-grid').innerHTML = 
+          '<p style="color: var(--text-muted);">Failed to load pages from server. Ensure server.js is running.</p>';
+      });
 
     function renderPages(items) {
       const grid = document.getElementById('pages-grid');
@@ -224,8 +188,8 @@
         return;
       }
 
-      items.forEach((page, index) => {
-        const savedStatus = localStorage.getItem(`dev_status_${page.path}`) || 'In Progress';
+      items.forEach((page) => {
+
         
         const card = document.createElement('div');
         card.className = 'card';
@@ -237,33 +201,21 @@
           </div>
           <div class="card-footer">
             <a href="${page.path}" class="btn" target="_blank">Open Page ↗</a>
-            <select class="status-select" onchange="updateStatus('${page.path}', this.value)">
-              <option value="In Progress" ${savedStatus === 'In Progress' ? 'selected' : ''}>⏳ In Progress</option>
-              <option value="Review" ${savedStatus === 'Review' ? 'selected' : ''}>👀 Review</option>
-              <option value="Done" ${savedStatus === 'Done' ? 'selected' : ''}>✅ Done</option>
-            </select>
           </div>
         `;
         grid.appendChild(card);
       });
     }
 
-    function updateStatus(path, value) {
-      localStorage.setItem(`dev_status_${path}`, value);
-    }
-
     function filterPages() {
       const query = document.getElementById('search').value.toLowerCase();
-      const filtered = pages.filter(p => 
+      const filtered = pagesData.filter(p => 
         p.title.toLowerCase().includes(query) || 
         p.path.toLowerCase().includes(query) || 
         (p.description && p.description.toLowerCase().includes(query))
       );
       renderPages(filtered);
     }
-
-    // Initial Render
-    renderPages(pages);
   </script>
 </body>
 </html>

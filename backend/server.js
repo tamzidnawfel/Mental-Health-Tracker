@@ -1,10 +1,12 @@
 const express = require('express');
 const mysql = require('mysql2');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 const db = mysql.createConnection({
     host: 'localhost',
@@ -30,6 +32,42 @@ db.connect((err) => {
         }
     });
 });
+
+// API: expose local directory for auto temporary navigation hub
+// Helper: Recursively scan project directory for .html files
+function getHtmlFiles(dir, baseDir = dir) {
+    let results = [];
+    const fs = require('fs');
+    
+    try {
+        const list = fs.readdirSync(dir);
+        list.forEach((file) => {
+            const filePath = path.join(dir, file);
+            const stat = fs.statSync(filePath);
+
+            // Ignore system/node folders
+            if (stat && stat.isDirectory()) {
+                if (file !== 'node_modules' && !file.startsWith('.')) {
+                    results = results.concat(getHtmlFiles(filePath, baseDir));
+                }
+            } else if (file.endsWith('.html') && file !== 'nav-index.html') {
+                const relativePath = '/' + path.relative(baseDir, filePath).replace(/\\/g, '/');
+                const cleanName = path.basename(file, '.html').replace(/[-_]/g, ' ');
+                const title = cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+
+                results.push({
+                    title: title,
+                    path: relativePath,
+                    mtime: stat.mtimeMs, 
+                    description: `File path: ${relativePath}`
+                });
+            }
+        });
+    } catch (err) {
+        console.error("Directory scan error:", err);
+    }
+    return results;
+}
 
 app.get('/', (req, res) => {
     res.send('MindCare Backend Server is running!');
@@ -307,6 +345,13 @@ app.get('/api/specializations', (req, res) => {
         }
         res.status(200).json(results);
     });
+});
+
+// API: Scan directory and return all HTML files
+app.get('/api/pages', (req, res) => {
+    const frontendDir = path.join(__dirname, '../frontend');
+    const pages = getHtmlFiles(frontendDir);
+    res.status(200).json(pages);
 });
 
 const PORT = 3000;
