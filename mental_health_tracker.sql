@@ -140,17 +140,9 @@ ALTER TABLE `provider`
 --
 
 ALTER TABLE `provider`
-  MODIFY `provider_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `provider_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=61; -- 61 because we manually assign here till 60
 
---
--- Dumping data for table `provider`
---
 
-INSERT INTO `provider` (`provider_id`, `name`, `session_fee`, `max_capacity`, `rating_avg`, `latitude`, `longitude`, `accepts_insurance`, `district_id`) VALUES
-(5, 'Dr. Sarah Smith', 1500.00, 20, 4.80, 23.81030000, 90.41250000, 1, 1),
-(6, 'Dr. Michael Rahman', 1200.00, 15, 4.50, 23.78060000, 90.40700000, 1, 2),
-(7, 'Dr. Emily Johnson', 2000.00, 10, 4.90, 23.75090000, 90.39370000, 0, 3),
-(8, 'Dr. Ahmed Khan', 1000.00, 25, 4.20, 23.79250000, 90.40780000, 1, 1);
 
 --
 -- Constraints for table `provider`
@@ -207,6 +199,227 @@ CREATE TABLE `hotlines` (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 );
+
+-- --------------------------------------------------------
+--
+-- For DISJOINTNESS between Provider subclasses
+--
+
+DELIMITER //
+
+CREATE TRIGGER therapist_disjoint
+BEFORE INSERT ON therapists
+FOR EACH ROW
+BEGIN
+    IF EXISTS (SELECT 1 FROM clinics WHERE provider_id = NEW.provider_id)
+       OR EXISTS (SELECT 1 FROM hotlines WHERE provider_id = NEW.provider_id) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Provider already belongs to another subclass';
+    END IF;
+END//
+
+CREATE TRIGGER clinic_disjoint
+BEFORE INSERT ON clinics
+FOR EACH ROW
+BEGIN
+    IF EXISTS (SELECT 1 FROM therapists WHERE provider_id = NEW.provider_id)
+       OR EXISTS (SELECT 1 FROM hotlines WHERE provider_id = NEW.provider_id) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Provider already belongs to another subclass';
+    END IF;
+END//
+
+CREATE TRIGGER hotline_disjoint
+BEFORE INSERT ON hotlines
+FOR EACH ROW
+BEGIN
+    IF EXISTS (SELECT 1 FROM therapists WHERE provider_id = NEW.provider_id)
+       OR EXISTS (SELECT 1 FROM clinics WHERE provider_id = NEW.provider_id) THEN
+        SIGNAL SQLSTATE '45000'
+        SET MESSAGE_TEXT = 'Provider already belongs to another subclass';
+    END IF;
+END//
+
+DELIMITER ;
+
+-- --------------------------------------------------------
+-- ========================================================
+-- 30 THERAPIST PROVIDERS
+-- Provider IDs: 1-30
+-- ========================================================
+
+INSERT INTO `provider`
+(`provider_id`, `name`, `session_fee`, `max_capacity`, `rating_avg`,
+ `latitude`, `longitude`, `accepts_insurance`, `district_id`)
+VALUES
+(1, 'Dr. Sarah Smith', 1500.00, 20, 4.80, 23.81030000, 90.41250000, 1, 1),
+(2, 'Dr. Michael Rahman', 1200.00, 15, 4.50, 23.78060000, 90.40700000, 1, 2),
+(3, 'Dr. Emily Johnson', 2000.00, 10, 4.90, 23.75090000, 90.39370000, 0, 3),
+(4, 'Dr. Ahmed Khan', 1000.00, 25, 4.20, 23.79250000, 90.40780000, 1, 4),
+(5, 'Dr. Nadia Islam', 1400.00, 18, 4.70, 23.81520000, 90.42130000, 1, 5),
+(6, 'Dr. James Wilson', 1800.00, 12, 4.60, 23.77040000, 90.40560000, 0, 6),
+(7, 'Dr. Farhana Akter', 1100.00, 20, 4.40, 23.74580000, 90.39820000, 1, 7),
+(8, 'Dr. Daniel Brown', 1600.00, 15, 4.75, 23.80410000, 90.41570000, 1, 1),
+(9, 'Dr. Rafiq Hasan', 1300.00, 22, 4.30, 23.78560000, 90.40190000, 1, 2),
+(10, 'Dr. Jessica Miller', 2200.00, 10, 4.95, 23.75820000, 90.38950000, 0, 3),
+(11, 'Dr. Tanvir Hossain', 1250.00, 18, 4.55, 23.81270000, 90.40980000, 1, 4),
+(12, 'Dr. Olivia Davis', 1700.00, 14, 4.65, 23.77430000, 90.41420000, 1, 5),
+(13, 'Dr. Nusrat Jahan', 1450.00, 20, 4.85, 23.73890000, 90.39610000, 1, 6),
+(14, 'Dr. Robert Taylor', 1900.00, 12, 4.70, 23.79950000, 90.42360000, 0, 7),
+(15, 'Dr. Samira Chowdhury', 1150.00, 24, 4.35, 23.78320000, 90.40940000, 1, 2),
+(16, 'Dr. William Anderson', 1550.00, 16, 4.60, 23.75240000, 90.40270000, 1, 3),
+(17, 'Dr. Mahmud Karim', 1350.00, 20, 4.45, 23.80680000, 90.41850000, 1, 1),
+(18, 'Dr. Sophia Martinez', 2100.00, 10, 4.88, 23.77810000, 90.39970000, 0, 2),
+(19, 'Dr. Ayesha Sultana', 1250.00, 18, 4.72, 23.74670000, 90.39180000, 1, 3),
+(20, 'Dr. Christopher Lee', 1750.00, 14, 4.58, 23.81730000, 90.40650000, 1, 1),
+(21, 'Dr. Shakil Ahmed', 1050.00, 25, 4.25, 23.78940000, 90.41310000, 1, 2),
+(22, 'Dr. Rachel Thompson', 2000.00, 11, 4.91, 23.76150000, 90.39760000, 0, 3),
+(23, 'Dr. Imran Hossain', 1400.00, 19, 4.52, 23.80170000, 90.41090000, 1, 1),
+(24, 'Dr. Maria Garcia', 1650.00, 15, 4.67, 23.77280000, 90.40430000, 1, 2),
+(25, 'Dr. Tahmina Begum', 1200.00, 21, 4.78, 23.75460000, 90.39070000, 1, 6),
+(26, 'Dr. Andrew Clark', 1850.00, 13, 4.62, 23.80850000, 90.42510000, 0, 7),
+(27, 'Dr. Sadia Rahman', 1300.00, 20, 4.48, 23.78190000, 90.41680000, 1, 2),
+(28, 'Dr. Benjamin Moore', 1950.00, 12, 4.82, 23.74350000, 90.40150000, 1, 3),
+(29, 'Dr. Rezaul Karim', 1100.00, 23, 4.38, 23.79620000, 90.41160000, 1, 1),
+(30, 'Dr. Hannah Williams', 1750.00, 14, 4.73, 23.76970000, 90.40890000, 0, 4);
+
+
+-- ========================================================
+-- THERAPIST SUBCLASS DATA
+-- ========================================================
+
+INSERT INTO `therapists`
+(`provider_id`, `license_no`, `years_of_experience`)
+VALUES
+(1, 'TH-LIC-001', 12),
+(2, 'TH-LIC-002', 8),
+(3, 'TH-LIC-003', 15),
+(4, 'TH-LIC-004', 6),
+(5, 'TH-LIC-005', 10),
+(6, 'TH-LIC-006', 9),
+(7, 'TH-LIC-007', 7),
+(8, 'TH-LIC-008', 11),
+(9, 'TH-LIC-009', 5),
+(10, 'TH-LIC-010', 14),
+(11, 'TH-LIC-011', 8),
+(12, 'TH-LIC-012', 10),
+(13, 'TH-LIC-013', 13),
+(14, 'TH-LIC-014', 16),
+(15, 'TH-LIC-015', 6),
+(16, 'TH-LIC-016', 9),
+(17, 'TH-LIC-017', 11),
+(18, 'TH-LIC-018', 17),
+(19, 'TH-LIC-019', 12),
+(20, 'TH-LIC-020', 7),
+(21, 'TH-LIC-021', 5),
+(22, 'TH-LIC-022', 14),
+(23, 'TH-LIC-023', 10),
+(24, 'TH-LIC-024', 8),
+(25, 'TH-LIC-025', 13),
+(26, 'TH-LIC-026', 15),
+(27, 'TH-LIC-027', 6),
+(28, 'TH-LIC-028', 11),
+(29, 'TH-LIC-029', 9),
+(30, 'TH-LIC-030', 16);
+
+
+-- ========================================================
+-- 20 CLINIC PROVIDERS
+-- Provider IDs: 31-50
+-- ========================================================
+
+INSERT INTO `provider`
+(`provider_id`, `name`, `session_fee`, `max_capacity`, `rating_avg`,
+ `latitude`, `longitude`, `accepts_insurance`, `district_id`)
+VALUES
+(31, 'Harmony Mental Health Clinic', 2500.00, 40, 4.60, 23.81240000, 90.41780000, 1, 1),
+(32, 'Hope Wellness Center', 2200.00, 35, 4.50, 23.78510000, 90.40920000, 1, 2),
+(33, 'Serenity Care Clinic', 2800.00, 30, 4.80, 23.75430000, 90.39560000, 0, 3),
+(34, 'Dhaka Mind Care Hospital', 3000.00, 50, 4.70, 23.79870000, 90.42150000, 1, 4),
+(35, 'Wellness First Clinic', 2000.00, 25, 4.30, 23.77650000, 90.40280000, 1, 5),
+(36, 'Peaceful Minds Center', 2400.00, 32, 4.55, 23.74260000, 90.39910000, 1, 6),
+(37, 'Bright Future Clinic', 2600.00, 45, 4.65, 23.80730000, 90.41460000, 0, 7),
+(38, 'CarePoint Mental Health', 2300.00, 28, 4.40, 23.76920000, 90.41170000, 1, 2),
+(39, 'New Horizon Clinic', 2700.00, 36, 4.75, 23.75980000, 90.38790000, 1, 1),
+(40, 'LifeBalance Wellness Clinic', 2900.00, 42, 4.85, 23.81950000, 90.40830000, 1, 6),
+(41, 'MindCare Community Clinic', 1900.00, 22, 4.20, 23.79170000, 90.41940000, 1, 2),
+(42, 'Tranquil Minds Hospital', 3200.00, 55, 4.90, 23.74890000, 90.39450000, 0, 7),
+(43, 'Healthy Mind Center', 2100.00, 30, 4.45, 23.80360000, 90.42670000, 1, 1),
+(44, 'Inner Peace Clinic', 2500.00, 38, 4.60, 23.77340000, 90.39860000, 1, 2),
+(45, 'Wellbeing Medical Center', 3100.00, 48, 4.75, 23.75710000, 90.40480000, 1, 3),
+(46, 'Renew Mental Wellness Clinic', 2250.00, 27, 4.35, 23.81480000, 90.41210000, 0, 1),
+(47, 'Mind & Life Care Center', 2600.00, 34, 4.55, 23.78260000, 90.42390000, 1, 2),
+(48, 'Hope Springs Clinic', 2350.00, 31, 4.65, 23.74970000, 90.40870000, 1, 6),
+(49, 'Calm Horizons Hospital', 3300.00, 60, 4.88, 23.80120000, 90.41620000, 1, 1),
+(50, 'Complete Care Mental Health', 2450.00, 33, 4.50, 23.77880000, 90.40550000, 1, 2);
+
+
+-- ========================================================
+-- CLINIC SUBCLASS DATA
+-- ========================================================
+
+INSERT INTO `clinics`
+(`provider_id`, `registration_no`, `total_beds`)
+VALUES
+(31, 'CL-REG-031', 40),
+(32, 'CL-REG-032', 35),
+(33, 'CL-REG-033', 30),
+(34, 'CL-REG-034', 50),
+(35, 'CL-REG-035', 25),
+(36, 'CL-REG-036', 32),
+(37, 'CL-REG-037', 45),
+(38, 'CL-REG-038', 28),
+(39, 'CL-REG-039', 36),
+(40, 'CL-REG-040', 42),
+(41, 'CL-REG-041', 22),
+(42, 'CL-REG-042', 55),
+(43, 'CL-REG-043', 30),
+(44, 'CL-REG-044', 38),
+(45, 'CL-REG-045', 48),
+(46, 'CL-REG-046', 27),
+(47, 'CL-REG-047', 34),
+(48, 'CL-REG-048', 31),
+(49, 'CL-REG-049', 60),
+(50, 'CL-REG-050', 33);
+
+-- ========================================================
+-- 10 HOTLINE PROVIDERS
+-- Provider IDs: 51-60
+-- ========================================================
+
+INSERT INTO `provider`
+(`provider_id`, `name`, `session_fee`, `max_capacity`, `rating_avg`,
+ `latitude`, `longitude`, `accepts_insurance`, `district_id`)
+VALUES
+(51, 'National Mental Health Helpline', 0.00, 50, 4.70, 23.81090000, 90.41530000, 0, 1),
+(52, 'HopeLine Bangladesh', 0.00, 40, 4.60, 23.78240000, 90.40810000, 0, 2),
+(53, 'Mind Support Hotline', 0.00, 35, 4.50, 23.75180000, 90.39740000, 0, 3),
+(54, 'Crisis Care Helpline', 0.00, 60, 4.80, 23.79820000, 90.42070000, 0, 4),
+(55, 'SafeTalk Mental Health Line', 0.00, 45, 4.55, 23.77460000, 90.40350000, 0, 5),
+(56, 'Wellness Support Hotline', 0.00, 30, 4.40, 23.74490000, 90.39280000, 0, 6),
+(57, 'CareConnect Helpline', 0.00, 55, 4.65, 23.80650000, 90.41790000, 0, 7),
+(58, 'Mental Wellness Support Line', 0.00, 38, 4.35, 23.78730000, 90.41060000, 0, 2),
+(59, 'Community Crisis Hotline', 0.00, 65, 4.75, 23.75870000, 90.40120000, 0, 6),
+(60, '24 Hour Mental Health Support', 0.00, 70, 4.85, 23.81570000, 90.42430000, 1, 1);
+
+
+-- ========================================================
+-- HOTLINE SUBCLASS DATA
+-- ========================================================
+
+INSERT INTO `hotlines`
+(`provider_id`, `max_capacity`, `active_connections`, `status`)
+VALUES
+(51, 50, 12, 'Active'),
+(52, 40, 8, 'Active'),
+(53, 35, 0, 'Inactive'),
+(54, 60, 25, 'Active'),
+(55, 45, 17, 'Active'),
+(56, 30, 0, 'Inactive'),
+(57, 55, 31, 'Active'),
+(58, 38, 9, 'Active'),
+(59, 65, 42, 'Active'),
+(60, 70, 28, 'Active');
 
 -- --------------------------------------------------------
 --
