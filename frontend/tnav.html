@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dev Navigation Index</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      padding: 2rem;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1.5rem;
+    }
+
+    h1 {
+      font-size: 1.875rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      color: var(--accent);
+    }
+
+    .controls {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      min-width: 200px;
+      padding: 0.6rem 1rem;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.95rem;
+    }
+
+    input[type="text"]:focus {
+      outline: 2px solid var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: transform 0.15s ease, border-color 0.15s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .card-path {
+      font-family: monospace;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+      word-break: break-all;
+    }
+
+    .card-desc {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      flex-grow: 1;
+    }
+
+    .card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      padding-top: 0.75rem;
+      border-top: 1px solid var(--border);
+    }
+
+    .btn {
+      display: inline-block;
+      padding: 0.4rem 0.8rem;
+      background: var(--accent);
+      color: #000;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      transition: background 0.15s ease;
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+      color: #fff;
+    }
+
+    .status-select {
+      background: var(--bg);
+      color: var(--text);
+      border: 1px solid var(--border);
+      padding: 0.3rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.75rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>🛠️ Dev Dashboard Index</h1>
+      <p style="color: var(--text-muted);">Temporary navigation hub for site pages under development.</p>
+      
+      <div class="controls">
+        <input type="text" id="search" placeholder="Search pages..." oninput="filterPages()">
+      </div>
+    </header>
+
+    <div class="grid" id="pages-grid"></div>
+  </div>
+
+  <script>
+    let pagesData = []; // Store fetched pages globally for search filtering
+
+    // Fetch dynamic HTML pages from your Node backend
+    fetch('http://localhost:3000/api/pages')
+      .then(res => res.json())
+      .then(pages => {
+        pagesData = pages.sort((a, b) => b.mtime - a.mtime); // Save data for searching, newest first
+        renderPages(pagesData); // Render the cards
+      })
+      .catch(err => {
+        console.error('Error scanning pages:', err);
+        document.getElementById('pages-grid').innerHTML = 
+          '<p style="color: var(--text-muted);">Failed to load pages from server. Ensure server.js is running.</p>';
+      });
+
+    function renderPages(items) {
+      const grid = document.getElementById('pages-grid');
+      grid.innerHTML = '';
+
+      if (items.length === 0) {
+        grid.innerHTML = '<p style="color: var(--text-muted);">No pages match your search.</p>';
+        return;
+      }
+
+      items.forEach((page) => {
+
+        
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div>
+            <div class="card-title">${page.title}</div>
+            <div class="card-path">${page.path}</div>
+            <div class="card-desc">${page.description || 'No description provided.'}</div>
+          </div>
+          <div class="card-footer">
+            <a href="${page.path}" class="btn" target="_blank">Open Page ↗</a>
+          </div>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function filterPages() {
+      const query = document.getElementById('search').value.toLowerCase();
+      const filtered = pagesData.filter(p => 
+        p.title.toLowerCase().includes(query) || 
+        p.path.toLowerCase().includes(query) || 
+        (p.description && p.description.toLowerCase().includes(query))
+      );
+      renderPages(filtered);
+    }
+  </script>
+</body>
+</html>
