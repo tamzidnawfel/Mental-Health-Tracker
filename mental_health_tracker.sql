@@ -457,7 +457,7 @@ DELIMITER ;
 CREATE TABLE `waitlist` (
   `waitlist_id` int(11) NOT NULL,
   `patient_id` int(11) NOT NULL,
-  `spec_id` int(11) NOT NULL,
+  `provider_id` int(11) NOT NULL,
   `request_date` date NOT NULL DEFAULT curdate(),
   `crisis_score` int(11) NOT NULL,
   `priority_level` enum('ROUTINE','MODERATE','HIGH','CRITICAL') NOT NULL DEFAULT 'ROUTINE',
@@ -468,9 +468,9 @@ CREATE TABLE `waitlist` (
 -- Dumping data for table `waitlist`
 --
 
-INSERT INTO `waitlist` (`waitlist_id`, `patient_id`, `spec_id`, `request_date`, `crisis_score`, `priority_level`, `status`) VALUES
-(1, 1, 1, '2026-08-17', 7, 'HIGH', 'Active'),
-(2, 3, 3, '2026-08-17', 8, 'HIGH', 'Active');
+INSERT INTO `waitlist` (`waitlist_id`, `patient_id`, `provider_id`, `request_date`, `crisis_score`, `priority_level`, `status`) VALUES
+(1, 1, 1, '2026-08-17', 1, 'HIGH', 'Active'),
+(2, 3, 3, '2026-08-17', 2, 'HIGH', 'Active');
 
 --
 -- PROVIDER LANGUAGE ENTRIES
@@ -716,7 +716,7 @@ ALTER TABLE `therapists`
 ALTER TABLE `waitlist`
   ADD PRIMARY KEY (`waitlist_id`),
   ADD KEY `fk_waitlist_patient` (`patient_id`),
-  ADD KEY `fk_waitlist_specialization` (`spec_id`);
+  ADD KEY `fk_waitlist_provider` (`provider_id`);
 
 --
 -- AUTO_INCREMENT for dumped tables
@@ -851,7 +851,7 @@ ALTER TABLE `therapists`
 --
 ALTER TABLE `waitlist`
   ADD CONSTRAINT `fk_waitlist_patient` FOREIGN KEY (`patient_id`) REFERENCES `patient` (`patient_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_waitlist_specialization` FOREIGN KEY (`spec_id`) REFERENCES `specialization` (`spec_id`) ON UPDATE CASCADE;
+  ADD CONSTRAINT `fk_waitlist_provider` FOREIGN KEY (`provider_id`) REFERENCES `provider` (`provider_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
