@@ -554,7 +554,16 @@ app.get('/api/patient/:id/appointments', (req, res) => {
             SELECT 
                 w.waitlist_id,
                 w.patient_id,
-                w.spec_id,
+                w.provider_id,
+                p2.name AS provider_name,
+                p2.district_id,
+                r2.district_name,
+                COALESCE((
+                    SELECT GROUP_CONCAT(s2.spec_name SEPARATOR ', ')
+                    FROM PROVIDER_SPECIALIZATIONS ps2
+                    JOIN SPECIALIZATION s2 ON ps2.spec_id = s2.spec_id
+                    WHERE ps2.provider_id = w.provider_id
+                ), 'General Therapy') AS specialization_name,
                 DATE_FORMAT(w.request_date, '%Y-%m-%d') AS request_date,
                 DATEDIFF(CURDATE(), w.request_date) AS days_waiting,
                 w.crisis_score,
@@ -565,10 +574,10 @@ app.get('/api/patient/:id/appointments', (req, res) => {
                     WHEN w.crisis_score >= 4 OR DATEDIFF(CURDATE(), w.request_date) >= 2 THEN 'MODERATE'
                     ELSE 'ROUTINE'
                 END AS priority_level,
-                w.status,
-                s.spec_name AS specialization_name
+                w.status
             FROM WAITLIST w
-            LEFT JOIN SPECIALIZATION s ON w.spec_id = s.spec_id
+            LEFT JOIN PROVIDER p2 ON w.provider_id = p2.provider_id
+            LEFT JOIN REGION r2 ON p2.district_id = r2.district_id
             WHERE w.patient_id = ?
             ORDER BY w.request_date DESC, w.waitlist_id DESC
         `;
@@ -727,12 +736,19 @@ app.get('/api/waitlist', (req, res) => {
             SELECT 
                 w.waitlist_id,
                 w.patient_id,
+                w.provider_id,
                 p.name AS patient_name,
                 p.email AS patient_email,
                 p.phone AS patient_phone,
                 p.city AS patient_city,
-                w.spec_id,
-                s.spec_name AS specialization_name,
+                pr.name AS provider_name,
+                pr.district_id,
+                COALESCE((
+                    SELECT GROUP_CONCAT(s2.spec_name SEPARATOR ', ')
+                    FROM PROVIDER_SPECIALIZATIONS ps2
+                    JOIN SPECIALIZATION s2 ON ps2.spec_id = s2.spec_id
+                    WHERE ps2.provider_id = w.provider_id
+                ), 'General Therapy') AS specialization_name,
                 DATE_FORMAT(w.request_date, '%Y-%m-%d') AS request_date,
                 DATEDIFF(CURDATE(), w.request_date) AS days_waiting,
                 w.crisis_score,
@@ -750,7 +766,7 @@ app.get('/api/waitlist', (req, res) => {
                 END AS is_time_escalated
             FROM WAITLIST w
             JOIN PATIENT p ON w.patient_id = p.patient_id
-            LEFT JOIN SPECIALIZATION s ON w.spec_id = s.spec_id
+            LEFT JOIN PROVIDER pr ON w.provider_id = pr.provider_id
             ORDER BY 
                 CASE w.status
                     WHEN 'Active' THEN 1
@@ -782,69 +798,55 @@ app.get('/api/waitlist', (req, res) => {
 
 // Join Priority Waitlist (When doctor/clinic capacity is full or direct queue request)
 app.post('/api/waitlist/join', (req, res) => {
-    const { patient_id, spec_id, provider_id, crisis_score } = req.body;
+    const { patient_id, provider_id, crisis_score } = req.body;
 
     if (!patient_id) {
         return res.status(400).json({ error: 'Patient ID is required to join waitlist.' });
     }
 
-    // Determine specialization ID if provider_id was passed instead
-    const resolveSpec = (cb) => {
-        if (spec_id) return cb(parseInt(spec_id, 10));
-        if (provider_id) {
-            db.query('SELECT spec_id FROM PROVIDER_SPECIALIZATIONS WHERE provider_id = ? LIMIT 1', [provider_id], (err, rows) => {
-                if (!err && rows && rows.length > 0) return cb(rows[0].spec_id);
-                return cb(1);
-            });
-        } else {
-            return cb(1);
-        }
-    };
+    const resolvedProviderId = provider_id ? parseInt(provider_id, 10) : 1;
+    const scoreNum = Math.min(10, Math.max(1, parseInt(crisis_score || 5, 10)));
+    let priorityLevel = 'ROUTINE';
+    if (scoreNum >= 9) priorityLevel = 'CRITICAL';
+    else if (scoreNum >= 7) priorityLevel = 'HIGH';
+    else if (scoreNum >= 4) priorityLevel = 'MODERATE';
 
-    resolveSpec((resolvedSpecId) => {
-        const scoreNum = Math.min(10, Math.max(1, parseInt(crisis_score || 5, 10)));
-        let priorityLevel = 'ROUTINE';
-        if (scoreNum >= 9) priorityLevel = 'CRITICAL';
-        else if (scoreNum >= 7) priorityLevel = 'HIGH';
-        else if (scoreNum >= 4) priorityLevel = 'MODERATE';
-
-        // Check if patient already has an active waitlist request for this specialization
-        const checkActiveSql = 'SELECT waitlist_id FROM WAITLIST WHERE patient_id = ? AND spec_id = ? AND status = "Active"';
-        db.query(checkActiveSql, [patient_id, resolvedSpecId], (checkErr, checkRows) => {
-            if (!checkErr && checkRows && checkRows.length > 0) {
-                // Update existing active entry's crisis score & trigger escalation
-                const existingId = checkRows[0].waitlist_id;
-                db.query('UPDATE WAITLIST SET crisis_score = ?, priority_level = ? WHERE waitlist_id = ?', [scoreNum, priorityLevel, existingId], () => {
-                    return res.status(200).json({
-                        message: 'You are already in the priority queue. Your distress score and priority level have been updated!',
-                        waitlist_id: existingId,
-                        priority_level: priorityLevel,
-                        spec_id: resolvedSpecId
-                    });
+    // Check if patient already has an active waitlist request for this provider
+    const checkActiveSql = 'SELECT waitlist_id FROM WAITLIST WHERE patient_id = ? AND provider_id = ? AND status = "Active"';
+    db.query(checkActiveSql, [patient_id, resolvedProviderId], (checkErr, checkRows) => {
+        if (!checkErr && checkRows && checkRows.length > 0) {
+            // Update existing active entry's crisis score & trigger escalation
+            const existingId = checkRows[0].waitlist_id;
+            db.query('UPDATE WAITLIST SET crisis_score = ?, priority_level = ? WHERE waitlist_id = ?', [scoreNum, priorityLevel, existingId], () => {
+                return res.status(200).json({
+                    message: 'You are already in the priority queue. Your distress score and priority level have been updated!',
+                    waitlist_id: existingId,
+                    priority_level: priorityLevel,
+                    provider_id: resolvedProviderId
                 });
-                return;
+            });
+            return;
+        }
+
+        // Insert new waitlist record
+        const insertSql = 'INSERT INTO WAITLIST (patient_id, provider_id, request_date, crisis_score, priority_level, status) VALUES (?, ?, CURDATE(), ?, ?, "Active")';
+        db.query(insertSql, [patient_id, resolvedProviderId, scoreNum, priorityLevel], (insErr, insRes) => {
+            if (insErr) {
+                console.error('Error joining waitlist:', insErr);
+                return res.status(500).json({ error: 'Failed to join priority waitlist.' });
             }
 
-            // Insert new waitlist record
-            const insertSql = 'INSERT INTO WAITLIST (patient_id, spec_id, request_date, crisis_score, priority_level, status) VALUES (?, ?, CURDATE(), ?, ?, "Active")';
-            db.query(insertSql, [patient_id, resolvedSpecId, scoreNum, priorityLevel], (insErr, insRes) => {
-                if (insErr) {
-                    console.error('Error joining waitlist:', insErr);
-                    return res.status(500).json({ error: 'Failed to join priority waitlist.' });
-                }
+            console.log(`Patient #${patient_id} queued into Priority Waitlist #${insRes.insertId} (Provider #${resolvedProviderId}, Score: ${scoreNum}, Priority: ${priorityLevel})`);
 
-                console.log(`Patient #${patient_id} queued into Priority Waitlist #${insRes.insertId} (Spec #${resolvedSpecId}, Score: ${scoreNum}, Priority: ${priorityLevel})`);
-
-                res.status(200).json({
-                    message: 'Successfully queued into the automated priority waitlist!',
-                    waitlist_id: insRes.insertId,
-                    patient_id,
-                    spec_id: resolvedSpecId,
-                    crisis_score: scoreNum,
-                    priority_level: priorityLevel,
-                    request_date: new Date().toISOString().split('T')[0],
-                    status: 'Active'
-                });
+            res.status(200).json({
+                message: 'Successfully queued into the automated priority waitlist!',
+                waitlist_id: insRes.insertId,
+                patient_id,
+                provider_id: resolvedProviderId,
+                crisis_score: scoreNum,
+                priority_level: priorityLevel,
+                request_date: new Date().toISOString().split('T')[0],
+                status: 'Active'
             });
         });
     });
