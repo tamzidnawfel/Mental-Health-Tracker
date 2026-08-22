@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Login - MindCare Clinical Workspace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/register.css">
+    <style>
+        .provider-login-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecfdf5;
+            color: #065f46;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            border: 1px solid #a7f3d0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div style="text-align: center;">
+            <span class="provider-login-badge">🩺 Doctor &amp; Clinic Portal</span>
+            <h1>Provider Workspace Login</h1>
+            <p class="subtitle">Sign in to manage booked patients and monitor priority waitlists</p>
+        </div>
+
+        <!-- Feedback Message Alert Box -->
+        <div id="alertBox" class="alert-box"></div>
+
+        <form id="providerLoginForm">
+            <div class="form-group">
+                <label for="email">Clinical Email or Practice Name</label>
+                <input type="text" id="email" name="email" required placeholder="e.g. doctor@hospital.org or Dr. Sarah Smith"
+                    autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required placeholder="Enter your password"
+                    autocomplete="current-password">
+            </div>
+
+            <button type="submit" id="loginBtn" class="btn-with-icon">
+                <span>Access Clinical Workspace</span>
+                <span class="login-icon-badge">➔</span>
+            </button>
+        </form>
+
+        <div class="login-prompt">
+            <span>New healthcare provider?</span>
+            <a href="provider.html" class="login-link">
+                Register Practice <span class="login-icon-badge">+</span>
+            </a>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; margin-top: 1rem; font-size: 13px;">
+            <a href="patient-login.html" class="back-link" style="margin-top:0;">👤 Patient Portal Login</a>
+            <a href="index.html" class="back-link" style="margin-top:0;">← Home</a>
+        </div>
+    </div>
+
+    <script src="js/provider-login.js"></script>
+
+</body>
+
+</html>

@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provider Workspace - MindCare Clinical Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/provider-dashboard.css">
+</head>
+
+<body>
+
+    <!-- TOP HEADER -->
+    <header class="provider-header">
+        <div class="header-container">
+            <div class="brand-group">
+                <a href="index.html" class="brand-link">
+                    <div class="brand-logo-icon">🩺</div>
+                    <div class="brand-text">
+                        <span class="brand-name">MindCare</span>
+                        <span class="brand-badge">Provider Portal</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- Provider Info & Actions -->
+            <div class="header-user-group">
+                <div class="provider-profile-summary">
+                    <div class="provider-avatar" id="headerProviderAvatar">D</div>
+                    <div class="provider-text-info">
+                        <div class="provider-name-row">
+                            <span class="provider-title" id="headerProviderName">Dr. Sarah Smith</span>
+                            <span class="verified-badge">✓ Clinician</span>
+                        </div>
+                        <span class="provider-meta-row">
+                            <span id="headerProviderType">Licensed Therapist</span> • 
+                            <span id="headerProviderDistrict">Dhaka Central</span> • 
+                            <span id="headerProviderFee">৳ 1,500/session</span>
+                        </span>
+                    </div>
+                </div>
+
+                <div class="header-actions">
+                    <button type="button" class="btn-refresh" id="refreshBtn" title="Refresh Dashboard">🔄 Refresh</button>
+                    <button type="button" class="btn-logout" id="logoutBtn" title="Sign Out">Sign Out</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN DASHBOARD -->
+    <main class="dashboard-main">
+        <div class="dashboard-container">
+
+            <!-- 1. URGENT CLINICAL ATTENTION ALARM BANNER (Shown when queue duration >= 4 days) -->
+            <div class="urgent-alarm-banner" id="urgentAlarmBanner" style="display: none;">
+                <div class="alarm-icon-wrapper">🚨</div>
+                <div class="alarm-content">
+                    <div class="alarm-title">URGENT CLINICAL ATTENTION REQUIRED</div>
+                    <div class="alarm-desc">
+                        You have <strong id="alarmCount">0</strong> patient(s) in your waitlist whose queue duration has exceeded 4 days and automatically escalated to <strong>HIGH / CRITICAL PRIORITY</strong>. Please review and schedule their appointments immediately.
+                    </div>
+                </div>
+                <button type="button" class="btn-alarm-action" id="alarmActionBtn">⚡ Review Escalated Patients ➔</button>
+            </div>
+
+            <!-- 2. CLINICAL OVERVIEW METRICS GRID -->
+            <section class="metrics-grid">
+                <!-- 1. Booked Patients -->
+                <div class="metric-card">
+                    <div class="metric-icon-wrap blue-bg">👥</div>
+                    <div class="metric-info">
+                        <span class="metric-label">Active Booked Patients</span>
+                        <div class="metric-val" id="statBookedPatients">0</div>
+                        <span class="metric-sub" id="statBookedSub">0 total bookings recorded</span>
+                    </div>
+                </div>
+
+                <!-- 2. Capacity & Slot Usage -->
+                <div class="metric-card">
+                    <div class="metric-icon-wrap green-bg">🏥</div>
+                    <div class="metric-info">
+                        <span class="metric-label">Clinical Capacity Usage</span>
+                        <div class="metric-val" id="statCapacityUsage">0 / 20</div>
+                        <div class="capacity-bar-wrap">
+                            <div class="capacity-bar-fill" id="capacityBarFill" style="width: 0%;"></div>
+                        </div>
+                        <span class="metric-sub" id="statCapacityStatus">Checking slots...</span>
+                    </div>
+                </div>
+
+                <!-- 3. Active Waitlist Queue -->
+                <div class="metric-card">
+                    <div class="metric-icon-wrap amber-bg">⏳</div>
+                    <div class="metric-info">
+                        <span class="metric-label">Patients in Waitlist</span>
+                        <div class="metric-val" id="statWaitlistCount">0</div>
+                        <span class="metric-sub">Automated escalation queue</span>
+                    </div>
+                </div>
+
+                <!-- 4. High/Critical Alerts -->
+                <div class="metric-card urgent-card">
+                    <div class="metric-icon-wrap red-bg">🚨</div>
+                    <div class="metric-info">
+                        <span class="metric-label">Urgent Queue Alerts</span>
+                        <div class="metric-val urgent-val" id="statUrgentCount">0</div>
+                        <span class="metric-sub" style="color: #ef4444; font-weight:600;">High / Critical (>4d)</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- MAIN WORKSPACE SECTION -->
+            <section class="workspace-section">
+                <!-- Navigation Tabs -->
+                <div class="workspace-tabs-bar">
+                    <div class="workspace-tabs" id="workspaceTabs">
+                        <button type="button" class="tab-btn active" data-tab="appointments">
+                            <span>📅 Booked Appointments</span>
+                            <span class="tab-badge" id="tabBadgeAppointments">0</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="waitlist">
+                            <span>⏳ Priority Waitlist Queue</span>
+                            <span class="tab-badge warning-badge" id="tabBadgeWaitlist">0</span>
+                        </button>
+                        <button type="button" class="tab-btn" data-tab="patientSearch">
+                            <span>📋 Patient Checkup History</span>
+                        </button>
+                    </div>
+
+                    <div class="workspace-controls">
+                        <div class="search-wrap">
+                            <span class="search-icon">🔍</span>
+                            <input type="text" id="patientSearchInput" placeholder="Search patient name, phone, city...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 1 CONTENT: BOOKED APPOINTMENTS -->
+                <div class="tab-pane active" id="paneAppointments">
+                    <div class="table-container">
+                        <table class="clinical-table">
+                            <thead>
+                                <tr>
+                                    <th>Patient Name</th>
+                                    <th>Contact Details</th>
+                                    <th>Location</th>
+                                    <th>Appointment Date</th>
+                                    <th>Consultation Fee</th>
+                                    <th>Status</th>
+                                    <th>Clinical History</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="appointmentsTableBody">
+                                <tr>
+                                    <td colspan="8" class="loading-td">
+                                        <div class="spinner-inline"></div> Loading booked patient appointments...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 2 CONTENT: PRIORITY WAITLIST QUEUE -->
+                <div class="tab-pane" id="paneWaitlist" style="display: none;">
+                    <div class="waitlist-header-info">
+                        <div class="info-tag">
+                            <span>⚡ <strong>Automated Priority Escalation Active:</strong> Patients in queue automatically advance from ROUTINE ➔ MODERATE (>2d) ➔ HIGH (>4d) ➔ CRITICAL (>6d).</span>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="clinical-table">
+                            <thead>
+                                <tr>
+                                    <th>Patient Name</th>
+                                    <th>Contact &amp; Language</th>
+                                    <th>Queue Request Date</th>
+                                    <th>Days Waiting</th>
+                                    <th>Escalated Priority Level</th>
+                                    <th>Queue Status</th>
+                                    <th>Clinical History</th>
+                                    <th>Clinical Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="waitlistTableBody">
+                                <tr>
+                                    <td colspan="8" class="loading-td">
+                                        <div class="spinner-inline"></div> Loading waitlisted patients...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TAB 3 CONTENT: PATIENT CHECKUP HISTORY LOOKUP -->
+                <div class="tab-pane" id="panePatientSearch" style="display: none;">
+                    <div class="patient-search-pane">
+                        <div class="search-hero-box">
+                            <h3>🔍 Patient Medical History &amp; Checkup Dossier Lookup</h3>
+                            <p>Search any patient to review past doctor visits, diagnoses, prescriptions, condition patterns, and appointment reliability.</p>
+                            <div class="dossier-search-bar">
+                                <input type="text" id="dossierSearchInput" placeholder="Search by patient name, email, phone number, or patient ID...">
+                                <button type="button" id="dossierSearchBtn" class="btn-dossier-search">Search Dossier</button>
+                            </div>
+                        </div>
+
+                        <div id="patientSearchResults" class="patient-search-results-grid">
+                            <!-- Populated dynamically -->
+                            <div class="empty-search-state">
+                                <span>💡 Enter a patient name, email, or ID above to inspect their clinical checkup history.</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+        </div>
+    </main>
+
+    <!-- PATIENT MEDICAL HISTORY & CHECKUP DOSSIER MODAL -->
+    <div class="modal-backdrop" id="patientHistoryModal" style="display: none;">
+        <div class="modal-card modal-card-large">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon">📋</span>
+                    <div>
+                        <h3 id="historyPatientName">Patient Medical History &amp; Checkup Dossier</h3>
+                        <span class="modal-sub-text" id="historyPatientSub">Comprehensive Clinical Record &amp; Consultation Timeline</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" id="closeHistoryModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body modal-body-scroll" id="historyModalBody">
+                <div class="loading-td">
+                    <div class="spinner-inline"></div> Loading complete clinical history...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ADMIT WAITLISTED PATIENT MODAL -->
+    <div class="modal-backdrop" id="admitModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon">📅</span>
+                    <div>
+                        <h3>Admit Patient &amp; Book Appointment</h3>
+                        <span class="modal-sub-text">Assign an active consultation slot to this waitlisted patient</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" id="closeAdmitModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="admit-patient-summary">
+                    <div class="admit-summary-row">
+                        <span>Patient:</span>
+                        <strong id="admitPatientName">John Doe</strong>
+                    </div>
+                    <div class="admit-summary-row">
+                        <span>Days in Queue:</span>
+                        <span id="admitDaysWaiting" style="color:#b45309; font-weight:700;">⏱️ 5 Days</span>
+                    </div>
+                    <div class="admit-summary-row">
+                        <span>Current Priority:</span>
+                        <span id="admitPriorityBadge" class="priority-pill high">HIGH</span>
+                    </div>
+                </div>
+
+                <form id="admitForm" style="margin-top: 16px;">
+                    <input type="hidden" id="admitWaitlistId">
+                    <div class="form-group">
+                        <label for="admitAppointmentDate">Select Appointment Date</label>
+                        <input type="date" id="admitAppointmentDate" required>
+                    </div>
+
+                    <div class="modal-alert-box" id="admitAlertBox" style="display: none;"></div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel-modal" id="cancelAdmitBtn">Cancel</button>
+                        <button type="submit" class="btn-confirm-admit" id="confirmAdmitBtn">
+                            <span>✓ Confirm Appointment &amp; Admit ➔</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- EDIT CLINICAL NOTES & PRESCRIPTION MODAL -->
+    <div class="modal-backdrop" id="editNotesModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon">📝</span>
+                    <div>
+                        <h3>Update Clinical Notes &amp; Prescription</h3>
+                        <span class="modal-sub-text" id="editNotesSubtitle">Document checkup diagnosis and treatment regimen</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" id="closeEditNotesModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <form id="editNotesForm">
+                    <input type="hidden" id="editNotesAppointmentId">
+                    <input type="hidden" id="editNotesPatientId">
+                    
+                    <div class="form-group">
+                        <label for="editClinicalNotes">Clinical Notes &amp; Observations</label>
+                        <textarea id="editClinicalNotes" rows="4" class="notes-textarea" placeholder="Document symptoms, screening scores, emotional state, and clinical impressions..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editPrescription">Prescription &amp; Recommended Treatment</label>
+                        <textarea id="editPrescription" rows="3" class="notes-textarea" placeholder="Specify therapy type (e.g. CBT, PMR), lifestyle protocols, or psychiatric medication recommendations..."></textarea>
+                    </div>
+
+                    <div class="modal-alert-box" id="editNotesAlertBox" style="display: none;"></div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-cancel-modal" id="cancelEditNotesBtn">Cancel</button>
+                        <button type="submit" class="btn-confirm-admit" id="saveNotesBtn">
+                            <span>💾 Save Clinical Record</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="provider-footer">
+        <div class="footer-inner">
+            <span>© 2026 MindCare Mental Health Clinical Platform • Provider Workspace</span>
+            <div class="footer-links">
+                <a href="directory.html">Directory View</a> • 
+                <a href="waitlist.html">Global Waitlist</a> • 
+                <a href="index.html">MindCare Home</a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/provider-dashboard.js"></script>
+
+</body>
+
+</html>

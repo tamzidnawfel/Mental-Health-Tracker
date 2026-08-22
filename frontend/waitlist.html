@@ -1,212 +1,163 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Waitlist & Priority Management - MindCare</title>
+    <title>My Waitlist Tracker - MindCare Patient Portal</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/waitlist.css">
 </head>
+
 <body>
 
-    <!-- MindCare Navigation Header -->
-    <header>
-        <a href="home.html" class="logo">
-            <div class="logo-icon">+</div>
-            MindCare
-        </a>
-        <nav style="display:flex; align-items:center; gap:16px;">
-            <a href="home.html" class="nav-home-link" style="margin-right:0;">Home</a>
-            <a href="directory.html" class="nav-home-link" style="margin-right:0;">Find Doctors</a>
-            <a href="appointments.html" class="nav-home-link" style="margin-right:0;">My Appointments</a>
-            <a href="waitlist.html" class="nav-home-link" style="margin-right:0; font-weight:700; color:var(--primary,#1e3a8a);">Waitlist Tracker</a>
-        </nav>
+    <!-- TOP EMERGENCY ALERT BAR -->
+    <div class="top-announcement-bar">
+        <div class="bar-container">
+            <span class="pulse-indicator"></span>
+            <span class="bar-text"><strong>24/7 Crisis Support:</strong> If you are experiencing severe distress, please call our confidential helpline.</span>
+            <a href="tel:988" class="hotline-chip">📞 Call 988 / 017-000-MIND</a>
+        </div>
+    </div>
+
+    <!-- MAIN NAVBAR -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="home.html" class="brand-logo">
+                <div class="logo-icon-wrapper">
+                    <span class="logo-plus">+</span>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">MindCare</span>
+                    <span class="brand-sub">Patient Wellness Portal</span>
+                </div>
+            </a>
+
+            <nav class="nav-links">
+                <a href="home.html" class="nav-link">Home</a>
+                <a href="directory.html" class="nav-link">Find Doctors &amp; Clinics</a>
+                <a href="appointments.html" class="nav-link">My Appointments</a>
+                <a href="waitlist.html" class="nav-link active">Waitlist Tracker</a>
+            </nav>
+
+            <div class="nav-user-actions">
+                <div class="user-profile-pill" id="userProfilePill">
+                    <div class="user-avatar" id="userAvatar">P</div>
+                    <div class="user-info">
+                        <span class="user-greeting">Patient Portal,</span>
+                        <span class="user-name" id="navPatientName">Loading...</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-logout" id="logoutBtn" title="Log out from MindCare">
+                    <span>Logout</span>
+                </button>
+            </div>
+        </div>
     </header>
 
-    <!-- Hero Section -->
+    <!-- HERO BANNER -->
     <section class="hero-banner">
-        <div class="hero-badge">
-            ⚡ Automated Priority &amp; Escalation Engine
+        <div class="hero-container">
+            <div class="hero-badge">
+                ⏳ Automated Priority &amp; Queue Tracker
+            </div>
+            <h1>My Priority Waitlist Status</h1>
+            <p>Track your position and automatic priority escalation for fully-booked doctors. Your priority automatically advances every 2 days until your consultation slot is allocated.</p>
         </div>
-        <h1>Waitlist &amp; Priority Management</h1>
-        <p>Automated queue monitoring that escalates patient priority when appointment waiting time exceeds safety thresholds (&gt;14 days) or when self-reported crisis assessments increase.</p>
     </section>
 
-    <!-- Main Content Container -->
+    <!-- MAIN CONTENT CONTAINER -->
     <main class="main-wrapper">
 
-        <!-- Summary Metric Cards -->
+        <!-- 1. PERSONAL STATS METRIC CARDS -->
         <section class="stats-grid">
             <div class="stat-card">
-                <div class="stat-icon-wrapper">
-                    📋
-                </div>
+                <div class="stat-icon-wrapper blue-bg">⏳</div>
                 <div class="stat-info">
-                    <h3 id="statTotalWaitlist">0</h3>
-                    <p>Total on Waitlist</p>
+                    <h3 id="statActiveQueues">0</h3>
+                    <p>Active Waitlist Queues</p>
                 </div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon-wrapper critical">
-                    🚨
-                </div>
+                <div class="stat-icon-wrapper amber-bg">⏱️</div>
                 <div class="stat-info">
-                    <h3 id="statCriticalHigh">0</h3>
-                    <p>Critical / High Priority</p>
+                    <h3 id="statMaxDays">0 Days</h3>
+                    <p>Longest Queue Duration</p>
                 </div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon-wrapper warning">
-                    ⏳
-                </div>
+                <div class="stat-icon-wrapper red-bg">⚡</div>
                 <div class="stat-info">
-                    <h3 id="statEscalated">0</h3>
-                    <p>Safety Escalated (&gt;14d)</p>
+                    <h3 id="statHighestPriority">ROUTINE</h3>
+                    <p>Highest Priority Level</p>
                 </div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-icon-wrapper success">
-                    ✅
-                </div>
+                <div class="stat-icon-wrapper green-bg">✓</div>
                 <div class="stat-info">
-                    <h3 id="statAssigned">0</h3>
-                    <p>Assigned Slots</p>
+                    <h3 id="statAssignedSlots">0</h3>
+                    <p>Admitted Consultations</p>
                 </div>
             </div>
         </section>
 
-        <!-- Main Full-Width Priority Queue Panel -->
-        <section class="dashboard-panel">
-            
-            <div class="panel-header">
-                <div class="panel-header-title">
-                    <h2>
-                        <span>📊</span> Active Patient Priority Queue
-                    </h2>
-                    <p>Patients are placed in queue when appointment slots are filled. Priority auto-escalates based on days waiting and self-reported crisis score.</p>
+        <!-- 2. AUTOMATION EXPLANATION BANNER -->
+        <div class="escalation-info-box">
+            <div class="info-icon">⚡</div>
+            <div class="info-body">
+                <h4>How Automated Priority Escalation Works for You</h4>
+                <p>When you book a provider whose capacity is currently full, you are automatically enrolled with <strong>ROUTINE (0–2 days)</strong> priority. As your waiting time increases, the system automatically elevates your position: <strong>MODERATE (&gt;2 days)</strong> ➔ <strong>HIGH (&gt;4 days)</strong> ➔ <strong>CRITICAL (&gt;6 days)</strong>, alerting the provider to admit you into their schedule immediately.</p>
+            </div>
+        </div>
+
+        <!-- 3. MAIN PERSONAL QUEUE CARDS SECTION -->
+        <section class="queue-section">
+            <div class="section-header-row">
+                <div>
+                    <h2>My Active Waitlist Enrollments</h2>
+                    <p class="sub-text">Below are the healthcare providers where you are currently queued for upcoming admission.</p>
                 </div>
+                <button type="button" class="btn-refresh" id="refreshBtn">🔄 Refresh Status</button>
             </div>
 
-            <!-- Queue Filter & Search Toolbar -->
-            <div class="queue-toolbar">
-                <div class="search-box">
-                    <span class="search-icon">🔍</span>
-                    <input type="text" id="queueSearch" placeholder="Search by patient name, ID, specialization...">
-                </div>
-
-                <div class="filter-group">
-                    <select id="priorityFilter" class="filter-select">
-                        <option value="ALL">All Priorities</option>
-                        <option value="CRITICAL">Critical</option>
-                        <option value="HIGH">High</option>
-                        <option value="MODERATE">Moderate</option>
-                        <option value="ROUTINE">Routine</option>
-                    </select>
-
-                    <select id="statusFilter" class="filter-select">
-                        <option value="ALL">All Statuses</option>
-                        <option value="Active">Active</option>
-                        <option value="Assigned">Assigned</option>
-                        <option value="Cancelled">Cancelled</option>
-                    </select>
-
-                    <button id="refreshBtn" class="btn-refresh" title="Reload queue data">
-                        🔄 Refresh
-                    </button>
+            <!-- Waitlist Cards Container -->
+            <div id="waitlistCardsContainer" class="waitlist-cards-list">
+                <div class="loading-state">
+                    <div class="spinner-inline"></div>
+                    <p>Loading your personal waitlist records...</p>
                 </div>
             </div>
-
-            <!-- Full-Width Queue Table -->
-            <div class="table-responsive">
-                <table class="queue-table">
-                    <thead>
-                        <tr>
-                            <th>Waitlist ID</th>
-                            <th>Patient Details</th>
-                            <th>Specialization</th>
-                            <th>Request Date</th>
-                            <th>Days Waiting</th>
-                            <th>Self-Reported Crisis</th>
-                            <th>Automated Priority</th>
-                            <th>Status</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="queueTableBody">
-                        <tr>
-                            <td colspan="9" class="empty-queue">
-                                <div class="empty-queue-icon">⏳</div>
-                                <p>Loading priority waitlist records...</p>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-
         </section>
 
     </main>
 
-    <!-- Edit Self-Reported Crisis Score Modal -->
-    <div id="updateModal" class="modal-overlay">
-        <div class="modal-content">
-            <div class="modal-icon">⚡</div>
-            <h3>Update Self-Reported Crisis Score</h3>
-            <p>Update assessment symptoms to trigger real-time automated priority recalculation.</p>
-
-            <input type="hidden" id="editWaitlistId">
-
-            <div class="crisis-modal-box">
-                <div class="crisis-modal-header">
-                    <label for="editCrisisRange">Self-Reported Score (1 - 10)</label>
-                    <div class="modal-score-badge">
-                        <span id="editScoreDisplay">7</span><span style="font-size: 0.9rem; color: var(--text-light);">/10</span>
-                    </div>
-                </div>
-
-                <input 
-                    type="range" 
-                    id="editCrisisRange" 
-                    min="1" 
-                    max="10" 
-                    value="7" 
-                    step="1"
-                >
-
-                <div class="slider-ticks">
-                    <span>1 (Mild)</span>
-                    <span>3</span>
-                    <span>5 (Moderate)</span>
-                    <span>7 (High)</span>
-                    <span>10 (Severe)</span>
-                </div>
-
-                <div class="priority-preview-strip">
-                    <span>Recalculated Priority:</span>
-                    <span id="editPriorityBadge" class="priority-tag high">High</span>
-                </div>
-            </div>
-
-            <div class="modal-actions">
-                <button id="saveUpdateBtn" class="btn-primary-save">Save &amp; Recalculate</button>
-                <button id="cancelUpdateBtn" class="btn-cancel">Cancel</button>
-            </div>
-        </div>
-    </div>
-
     <!-- Notification Toast -->
     <div id="toast" class="toast-msg"></div>
 
-    <!-- Footer -->
-    <footer>
-        MindCare Mental Health Resource Accessibility Tracker &bull; CSE370 Database Systems
+    <!-- FOOTER -->
+    <footer class="patient-footer">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <div class="logo-icon-wrapper">
+                    <span class="logo-plus">+</span>
+                </div>
+                <span class="brand-name">MindCare</span>
+            </div>
+            <p>© 2026 MindCare Mental Health Resource Tracker • Secure Patient Portal</p>
+            <div class="footer-links">
+                <a href="home.html">Home</a> • 
+                <a href="directory.html">Find Doctors</a> • 
+                <a href="appointments.html">Appointments</a>
+            </div>
+        </div>
     </footer>
 
     <script src="js/waitlist.js"></script>
 </body>
+
 </html>

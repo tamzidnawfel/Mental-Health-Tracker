@@ -288,26 +288,22 @@
                 <div class="capacity-waitlist-prompt" id="capacityWaitlistPrompt" style="display: none;">
                     <div class="waitlist-alert-icon">⏳</div>
                     <h4>Provider at Maximum Capacity</h4>
-                    <p id="capacityMessage" style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">This provider has reached their maximum patient limit. You can queue into the automated priority waitlist to be first in line when a slot opens.</p>
+                    <p id="capacityMessage" style="font-size:13px; color:var(--text-muted); margin-bottom:14px;">This provider has reached their maximum patient limit. You can enroll in their automated priority waitlist to be admitted as soon as an opening becomes available.</p>
                     
-                    <form id="waitlistDirectJoinForm" style="display: flex; flex-direction: column; gap: 12px; background: #fffbeb; border: 1px solid #fde68a; padding: 16px; border-radius: var(--radius-md, 10px);">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <label style="font-size:12px; font-weight:700; color:#92400e;">Self-Reported Distress Score (1–10):</label>
-                            <span id="modalWaitlistScoreBadge" style="background:#b45309; color:#fff; font-size:12px; font-weight:800; padding:2px 8px; border-radius:12px;">5/10</span>
+                    <div style="display: flex; flex-direction: column; gap: 10px; background: #fffbeb; border: 1px solid #fde68a; padding: 14px; border-radius: var(--radius-md, 10px); margin-bottom: 14px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:12px; color:#92400e; font-weight:700;">
+                            <span>Initial Queue Priority:</span>
+                            <span style="background:#fef9c3; color:#854d0e; padding:2px 8px; border-radius:6px; border:1px solid #facc15; font-weight:800;">ROUTINE QUEUE</span>
                         </div>
-                        <input type="range" id="modalWaitlistCrisisInput" min="1" max="10" value="5" style="accent-color:#b45309; width:100%;">
-                        <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:#92400e; border-top:1px dashed #fde68a; padding-top:8px;">
-                            <span>Initial Priority Level:</span>
-                            <span id="modalWaitlistPriorityPreview" style="background:#fef9c3; color:#854d0e; padding:2px 8px; border-radius:6px; font-weight:800; border:1px solid #facc15;">MODERATE PRIORITY</span>
+                        <div style="font-size:11px; color:#b45309; background:rgba(255,255,255,0.7); padding:8px 10px; border-radius:6px; line-height:1.4;">
+                            ⚡ <strong>Automated Escalation:</strong> Your priority level automatically increases every 2 days (>2d: Moderate, >4d: High, >6d: Critical) and alerts the provider to schedule your appointment urgently.
                         </div>
-                        <div style="font-size:11px; color:#b45309; background:rgba(255,255,255,0.7); padding:6px 10px; border-radius:6px;">
-                            ⚡ <strong>Auto-Escalation:</strong> If waiting > 2 days, priority automatically upgrades from Low ➔ Medium ➔ High!
-                        </div>
-                        <div class="booking-alert-box" id="waitlistAlertBox" style="display: none;"></div>
-                        <button type="submit" class="btn-primary-modal" id="submitWaitlistDirectBtn" style="background:#b45309; justify-content:center; margin-top:4px;">
-                            <span>⚡ Join Priority Waitlist Now ➔</span>
-                        </button>
-                    </form>
+                    </div>
+                    
+                    <div class="booking-alert-box" id="waitlistAlertBox" style="display: none;"></div>
+                    <button type="button" class="btn-primary-modal" id="submitWaitlistDirectBtn" style="background:#b45309; justify-content:center; width:100%;">
+                        <span>⚡ Enroll in Priority Waitlist Now ➔</span>
+                    </button>
                 </div>
             </div>
         </div>

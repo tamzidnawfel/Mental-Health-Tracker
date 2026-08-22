@@ -807,44 +807,11 @@ function initModals() {
     const modalWaitlistScoreBadge = document.getElementById('modalWaitlistScoreBadge');
     const modalWaitlistPriorityPreview = document.getElementById('modalWaitlistPriorityPreview');
 
-    if (modalWaitlistCrisisInput) {
-        modalWaitlistCrisisInput.addEventListener('input', (e) => {
-            const score = parseInt(e.target.value, 10);
-            if (modalWaitlistScoreBadge) modalWaitlistScoreBadge.textContent = `${score}/10`;
-            
-            let pText = 'ROUTINE CARE';
-            let pColor = '#065f46';
-            let pBg = '#ecfdf5';
-            let pBrd = '#6ee7b7';
 
-            if (score >= 9) {
-                pText = 'CRITICAL PRIORITY';
-                pColor = '#991b1b';
-                pBg = '#fee2e2';
-                pBrd = '#f87171';
-            } else if (score >= 7) {
-                pText = 'HIGH PRIORITY';
-                pColor = '#9a3412';
-                pBg = '#ffedd5';
-                pBrd = '#fb923c';
-            } else if (score >= 4) {
-                pText = 'MODERATE PRIORITY';
-                pColor = '#854d0e';
-                pBg = '#fef9c3';
-                pBrd = '#facc15';
-            }
 
-            if (modalWaitlistPriorityPreview) {
-                modalWaitlistPriorityPreview.textContent = pText;
-                modalWaitlistPriorityPreview.style.color = pColor;
-                modalWaitlistPriorityPreview.style.background = pBg;
-                modalWaitlistPriorityPreview.style.borderColor = pBrd;
-            }
-        });
-    }
-
-    if (waitlistDirectJoinForm) {
-        waitlistDirectJoinForm.addEventListener('submit', async (e) => {
+    const submitWaitlistDirectBtn = document.getElementById('submitWaitlistDirectBtn');
+    if (submitWaitlistDirectBtn) {
+        submitWaitlistDirectBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             await submitDirectWaitlistJoin();
         });
@@ -1017,13 +984,10 @@ async function submitAppointmentBooking() {
  */
 async function submitDirectWaitlistJoin() {
     const bookingProviderId = document.getElementById('bookingProviderId').value;
-    const bookingSpecId = document.getElementById('bookingSpecId').value;
-    const modalWaitlistCrisisInput = document.getElementById('modalWaitlistCrisisInput');
     const submitBtn = document.getElementById('submitWaitlistDirectBtn');
     const alertBox = document.getElementById('waitlistAlertBox');
 
     const patientId = currentPatient ? currentPatient.patient_id : 1;
-    const crisisScore = modalWaitlistCrisisInput ? modalWaitlistCrisisInput.value : 5;
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Enrolling in Priority Queue...';
@@ -1034,9 +998,7 @@ async function submitDirectWaitlistJoin() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 patient_id: patientId,
-                provider_id: bookingProviderId,
-                spec_id: bookingSpecId,
-                crisis_score: crisisScore
+                provider_id: bookingProviderId
             })
         });
 
@@ -1046,11 +1008,11 @@ async function submitDirectWaitlistJoin() {
             alertBox.className = 'booking-alert-box success';
             alertBox.innerHTML = `
                 <div><strong>✓ ${data.message}</strong></div>
-                <div style="margin-top:4px; font-size:12px;">Waitlist #${data.waitlist_id} • Priority: <strong>${data.priority_level}</strong> (Distress Score: ${data.crisis_score}/10).</div>
-                <div style="margin-top:6px; font-size:11px; color:#047857;">Auto-escalation engine is monitoring this queue. Redirecting to your care dashboard...</div>
+                <div style="margin-top:4px; font-size:12px;">Waitlist Position #${data.waitlist_id} • Status: <strong>${data.priority_level || 'ROUTINE'}</strong></div>
+                <div style="margin-top:6px; font-size:11px; color:#047857;">Automated escalation engine will advance your priority every 2 days. Redirecting to your care dashboard...</div>
             `;
             alertBox.style.display = 'block';
-            submitBtn.textContent = 'Queued! Redirecting...';
+            submitBtn.textContent = 'Enrolled! Redirecting...';
 
             setTimeout(() => {
                 window.location.href = `appointments.html?booked=waitlist&id=${data.waitlist_id}`;
@@ -1060,7 +1022,7 @@ async function submitDirectWaitlistJoin() {
             alertBox.textContent = data.error || 'Failed to join priority waitlist.';
             alertBox.style.display = 'block';
             submitBtn.disabled = false;
-            submitBtn.textContent = '⚡ Join Priority Waitlist Now ➔';
+            submitBtn.textContent = '⚡ Enroll in Priority Waitlist Now ➔';
         }
     } catch (err) {
         console.error('Waitlist submission error:', err);
@@ -1068,7 +1030,7 @@ async function submitDirectWaitlistJoin() {
         alertBox.textContent = 'Server connection error. Please try again.';
         alertBox.style.display = 'block';
         submitBtn.disabled = false;
-        submitBtn.textContent = '⚡ Join Priority Waitlist Now ➔';
+        submitBtn.textContent = '⚡ Enroll in Priority Waitlist Now ➔';
     }
 }
 

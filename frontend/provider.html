@@ -3,45 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Provider Registration - MindCare</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="css/provider.css">
+    <title>Provider Registration - MindCare Clinical Network</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/register.css">
+    <style>
+        .spec-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .spec-chip-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .spec-chip-label:hover {
+            background: #e2e8f0;
+        }
+        .spec-chip-label input:checked + span {
+            font-weight: 700;
+            color: #065f46;
+        }
+        .conditional-subclass {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            padding: 16px;
+            border-radius: 10px;
+            margin-bottom: 1.5rem;
+        }
+        .provider-badge-header {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: #ecfdf5;
+            color: #065f46;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 12px;
+            border: 1px solid #a7f3d0;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Provider Registration</h1>
-        <p class="subtitle">Join our network of mental health professionals</p>
-        
-        <form action="#" method="POST">
+
+<div class="container" style="max-width: 650px;">
+    <div style="text-align: center;">
+        <span class="provider-badge-header">🩺 Healthcare Professional &amp; Clinic Portal</span>
+        <h1>Join the MindCare Provider Network</h1>
+        <p class="subtitle">Expand your clinical reach, manage appointments, and monitor patient queues</p>
+    </div>
+    
+    <!-- Feedback Message Alert Box -->
+    <div id="alertBox" class="alert-box"></div>
+
+    <form id="providerRegistrationForm">
+
+        <!-- 1. Practice Name & Type -->
+        <div class="form-group">
+            <label for="name">Full Name / Clinic Name</label>
+            <input type="text" id="name" required placeholder="e.g. Dr. Jane Doe or MindCare Hospital">
+        </div>
+
+        <div class="form-group">
+            <label for="provider_type">Provider Subclass Type</label>
+            <select id="provider_type" required>
+                <option value="therapist">Licensed Therapist / Clinical Psychologist</option>
+                <option value="clinic">Psychiatric Clinic / Medical Hospital</option>
+            </select>
+        </div>
+
+        <!-- 2. Account Credentials -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="form-group">
-                <label for="fullName">Full Name / Clinic Name</label>
-                <input type="text" id="fullName" name="fullName" required placeholder="e.g. Dr. Jane Doe">
+                <label for="email">Clinical Email Address</label>
+                <input type="email" id="email" required placeholder="doctor@hospital.org" autocomplete="email">
             </div>
-            
             <div class="form-group">
-                <label for="providerType">Provider Type</label>
-                <select id="providerType" name="providerType" required>
-                    <option value="">Select type...</option>
-                    <option value="therapist">Therapist/Counselor</option>
-                    <option value="clinic">Clinic/Hospital</option>
-                    <option value="hotline">Crisis Hotline</option>
+                <label for="password">Account Password</label>
+                <input type="password" id="password" required placeholder="Create secure password" autocomplete="new-password">
+            </div>
+        </div>
+
+        <!-- 3. Practice Location & Fees -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group">
+                <label for="district_id">District / City Location</label>
+                <select id="district_id" required>
+                    <option value="">Select District...</option>
+                    <option value="1">Dhaka Central</option>
+                    <option value="2">Chittagong Metropolitan</option>
+                    <option value="3">Sylhet Sadar</option>
+                    <option value="4">Rajshahi Urban</option>
+                    <option value="5">Khulna City</option>
+                    <option value="6">Barisal District</option>
+                    <option value="7">Rangpur Division</option>
+                    <option value="8">Mymensingh Town</option>
+                    <option value="9">Comilla Metro</option>
+                    <option value="10">Gazipur Industrial Zone</option>
                 </select>
             </div>
-            
             <div class="form-group">
-                <label for="email">Email Address</label>
-                <input type="email" id="email" name="email" required placeholder="contact@example.com">
+                <label for="session_fee">Session / Consultation Fee (৳)</label>
+                <input type="number" id="session_fee" required value="1500" min="0" step="50" placeholder="1500">
             </div>
-            
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" id="password" name="password" required>
+                <label for="max_capacity">Max Patient Capacity</label>
+                <input type="number" id="max_capacity" required value="20" min="1" max="100" placeholder="20">
             </div>
-            
-            <button type="submit">Register as Provider</button>
-        </form>
-        
-        <a href="index.html" class="back-link">← Back to Home</a>
+            <div class="form-group">
+                <label for="accepts_insurance">Accepts Health Insurance?</label>
+                <select id="accepts_insurance" required>
+                    <option value="1">Yes, Accepts Insurance</option>
+                    <option value="0">No (Direct Billing Only)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 4. Subclass Specific Details -->
+        <div id="therapistFields" class="conditional-subclass">
+            <h4 style="margin-top:0; margin-bottom:10px; color:#065f46; font-size:14px;">Therapist Credentials</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="license_no" style="font-size:12px;">License / BMDC Registration No.</label>
+                    <input type="text" id="license_no" placeholder="e.g. BMDC-TR-5021">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="years_of_experience" style="font-size:12px;">Years of Clinical Experience</label>
+                    <input type="number" id="years_of_experience" value="5" min="0" max="60">
+                </div>
+            </div>
+        </div>
+
+        <div id="clinicFields" class="conditional-subclass" style="display: none;">
+            <h4 style="margin-top:0; margin-bottom:10px; color:#065f46; font-size:14px;">Clinic &amp; Facility Details</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="registration_no" style="font-size:12px;">Hospital Registration No.</label>
+                    <input type="text" id="registration_no" placeholder="e.g. DGHS-CL-882">
+                </div>
+                <div class="form-group" style="margin-bottom:0;">
+                    <label for="total_beds" style="font-size:12px;">Total Inpatient Beds</label>
+                    <input type="number" id="total_beds" value="30" min="1" max="500">
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. Clinical Specializations -->
+        <div class="form-group">
+            <label>Clinical Specializations (Select all that apply)</label>
+            <div class="spec-grid" id="specContainer">
+                <label class="spec-chip-label"><input type="checkbox" name="specs" value="1" checked> <span>Depression &amp; Mood</span></label>
+                <label class="spec-chip-label"><input type="checkbox" name="specs" value="2" checked> <span>Anxiety &amp; Panic</span></label>
+                <label class="spec-chip-label"><input type="checkbox" name="specs" value="3"> <span>Trauma &amp; PTSD</span></label>
+                <label class="spec-chip-label"><input type="checkbox" name="specs" value="4"> <span>Child &amp; Adolescent</span></label>
+                <label class="spec-chip-label"><input type="checkbox" name="specs" value="5"> <span>Addiction &amp; Recovery</span></label>
+                <label class="spec-chip-label"><input type="checkbox" name="specs" value="6"> <span>Family &amp; Relationship</span></label>
+                <label class="spec-chip-label"><input type="checkbox" name="specs" value="7"> <span>Bipolar &amp; Psychosis</span></label>
+                <label class="spec-chip-label"><input type="checkbox" name="specs" value="8"> <span>Geriatric Psychology</span></label>
+            </div>
+        </div>
+
+        <!-- 6. Languages Spoken -->
+        <div class="form-group">
+            <label>Languages Supported</label>
+            <div style="display:flex; gap:16px;">
+                <label class="spec-chip-label"><input type="checkbox" name="langs" value="002" checked> <span>🇧🇩 Bengali</span></label>
+                <label class="spec-chip-label"><input type="checkbox" name="langs" value="001" checked> <span>🌐 English</span></label>
+            </div>
+        </div>
+
+        <button type="submit" id="submitBtn">Register as Healthcare Provider</button>
+    </form>
+    
+    <div class="login-prompt">
+        <span>Already registered as a provider?</span>
+        <a href="provider-login.html" class="login-link">
+            Provider Login <span class="login-icon-badge">➔</span>
+        </a>
     </div>
+
+    <a href="index.html" class="back-link">← Back to MindCare Home</a>
+</div>
+
+<!-- Registration Success Modal -->
+<div id="successModal" class="modal-overlay">
+    <div class="modal-card">
+        <div class="modal-icon-success">✓</div>
+        <h2>Provider Account Created!</h2>
+        <p class="modal-sub">Your clinical account has been successfully registered in the MindCare Provider Directory.</p>
+        
+        <div class="password-box-container">
+            <div class="pwd-field-label">Provider Name:</div>
+            <div class="pwd-generated-text" id="modalProviderName" style="color:#065f46; font-size:18px;">Dr. Jane Doe</div>
+            <div class="pwd-field-label" style="margin-top:8px;">Registered Login Email:</div>
+            <div class="pwd-generated-text" id="modalProviderEmail" style="color:#1e293b; font-size:15px;">doctor@hospital.org</div>
+        </div>
+
+        <a href="provider-login.html" class="btn-proceed-login" id="proceedLoginBtn">
+            <span>Proceed to Provider Login</span>
+            <span class="btn-arrow-badge">➔</span>
+        </a>
+    </div>
+</div>
+
+<script src="js/provider-register.js"></script>
+
 </body>
 </html>
