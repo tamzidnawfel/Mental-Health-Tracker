@@ -278,9 +278,9 @@
                                 <span class="fee-label">Consultation Fee</span>
                                 <span class="fee-value">৳ 1,500 <small>/ session</small></span>
                             </div>
-                            <a href="directory.html?doctor=Sarah" class="btn-book-doctor">
-                                Book Now ➔
-                            </a>
+                            <button type="button" class="btn-book-doctor open-booking-modal" data-provider-id="1" data-provider-name="Dr. Sarah Smith" data-provider-role="Licensed Clinical Psychologist" data-provider-fee="1500" data-provider-location="Dhaka Central">
+                                <span>📅 Book Appointment ➔</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -310,9 +310,9 @@
                                 <span class="fee-label">Consultation Fee</span>
                                 <span class="fee-value">৳ 1,200 <small>/ session</small></span>
                             </div>
-                            <a href="directory.html?doctor=Michael" class="btn-book-doctor">
-                                Book Now ➔
-                            </a>
+                            <button type="button" class="btn-book-doctor open-booking-modal" data-provider-id="2" data-provider-name="Dr. Michael Rahman" data-provider-role="Consultant Psychiatrist &amp; MD" data-provider-fee="1200" data-provider-location="Chittagong Metro">
+                                <span>📅 Book Appointment ➔</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -342,9 +342,9 @@
                                 <span class="fee-label">Consultation Fee</span>
                                 <span class="fee-value">৳ 2,000 <small>/ session</small></span>
                             </div>
-                            <a href="directory.html?doctor=Emily" class="btn-book-doctor">
-                                Book Now ➔
-                            </a>
+                            <button type="button" class="btn-book-doctor open-booking-modal" data-provider-id="3" data-provider-name="Dr. Emily Johnson" data-provider-role="Psychotherapist &amp; Trauma Specialist" data-provider-fee="2000" data-provider-location="Sylhet Sadar">
+                                <span>📅 Book Appointment ➔</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -374,9 +374,9 @@
                                 <span class="fee-label">Consultation Fee</span>
                                 <span class="fee-value">৳ 1,000 <small>/ session</small></span>
                             </div>
-                            <a href="directory.html?doctor=Ahmed" class="btn-book-doctor">
-                                Book Now ➔
-                            </a>
+                            <button type="button" class="btn-book-doctor open-booking-modal" data-provider-id="4" data-provider-name="Dr. Ahmed Khan" data-provider-role="Addiction &amp; Crisis Specialist" data-provider-fee="1000" data-provider-location="Dhaka Central">
+                                <span>📅 Book Appointment ➔</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -572,6 +572,63 @@
             </div>
         </div>
     </footer>
+
+    <!-- BOOK APPOINTMENT MODAL ON HOMEPAGE -->
+    <div class="modal-backdrop" id="homeBookingModal" style="display: none;">
+        <div class="modal-card">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <span class="modal-badge-icon">📅</span>
+                    <div>
+                        <h3 id="modalDoctorName">Book Clinical Appointment</h3>
+                        <span class="modal-doctor-sub" id="modalDoctorRole">Licensed Specialist</span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close-modal" id="closeHomeBookingModalBtn">✕</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="booking-summary-box">
+                    <div class="summary-item">
+                        <span class="sum-label">Consultation Fee:</span>
+                        <span class="sum-value" id="modalDoctorFee">৳ 1,500</span>
+                    </div>
+                    <div class="summary-item">
+                        <span class="sum-label">Location:</span>
+                        <span class="sum-value" id="modalDoctorLocation">Dhaka Central</span>
+                    </div>
+                </div>
+
+                <form id="homeAppointmentForm" class="appointment-form">
+                    <input type="hidden" id="homeBookingProviderId" value="1">
+
+                    <div class="form-group">
+                        <label for="homePatientNameInput">Patient Name</label>
+                        <input type="text" id="homePatientNameInput" required placeholder="Enter your full name">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="homePatientEmailInput">Patient Email</label>
+                        <input type="email" id="homePatientEmailInput" required placeholder="Enter your registered email">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="homeAppointmentDateInput">Select Appointment Date</label>
+                        <input type="date" id="homeAppointmentDateInput" required>
+                    </div>
+
+                    <div class="booking-alert-box" id="homeBookingAlertBox" style="display: none;"></div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary-modal" id="cancelHomeBookingBtn">Cancel</button>
+                        <button type="submit" class="btn-primary-modal" id="confirmHomeBookingBtn">
+                            <span>✓ Confirm Booking ➔</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <!-- SCRIPT -->
     <script src="js/home.js"></script>

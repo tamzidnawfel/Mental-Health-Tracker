@@ -103,7 +103,8 @@ function initTabsAndControls() {
     const alarmActionBtn = document.getElementById('alarmActionBtn');
 
     tabButtons.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.addEventListener('click', (e) => {
+            if (!btn.dataset.tab) return; // If link button (e.g. Zones), allow standard navigation
             tabButtons.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             activeTab = btn.dataset.tab;

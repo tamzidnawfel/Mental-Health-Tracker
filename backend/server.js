@@ -921,24 +921,39 @@ app.get('/api/directory', (req, res) => {
 // Book Appointment API
 // If provider capacity is full, AUTOMATICALLY enrolls patient into WAITLIST with initial ROUTINE priority!
 app.post('/api/appointments', (req, res) => {
-    const { patient_id, provider_id, appointment_date } = req.body;
+    let { patient_id, provider_id, appointment_date, email, name } = req.body;
 
-    if (!patient_id || !provider_id) {
-        return res.status(400).json({ error: 'Please provide patient ID and provider ID.' });
-    }
+    const resolvePatient = (callback) => {
+        if (patient_id) return callback(parseInt(patient_id, 10));
+        if (email) {
+            db.query('SELECT patient_id FROM PATIENT WHERE email = ?', [email.trim()], (err, rows) => {
+                if (!err && rows && rows.length > 0) return callback(rows[0].patient_id);
+                // If not found, default to patient 1
+                return callback(1);
+            });
+        } else {
+            return callback(1);
+        }
+    };
 
-    const resolvedDate = appointment_date || new Date().toISOString().split('T')[0];
+    resolvePatient((resolvedPatientId) => {
+        if (!provider_id) {
+            return res.status(400).json({ error: 'Please provide provider ID.' });
+        }
 
-    // Check provider capacity
-    const checkSql = `
-        SELECT 
-            p.provider_id, 
-            p.name, 
-            p.max_capacity, 
-            p.current_patients
-        FROM PROVIDER p 
-        WHERE p.provider_id = ?
-    `;
+        const resolvedDate = appointment_date || new Date().toISOString().split('T')[0];
+
+        // Check provider capacity
+        const checkSql = `
+            SELECT 
+                p.provider_id, 
+                p.name, 
+                p.max_capacity, 
+                p.current_patients
+            FROM PROVIDER p 
+            WHERE p.provider_id = ?
+        `;
+
 
     db.query(checkSql, [provider_id], (checkErr, checkRows) => {
         if (checkErr || !checkRows || checkRows.length === 0) {
@@ -951,11 +966,11 @@ app.post('/api/appointments', (req, res) => {
 
         // If provider is at or above capacity, automatically place patient in priority waitlist queue!
         if (maxCap > 0 && currentCount >= maxCap) {
-            console.log(`Auto-Queue: Provider #${provider_id} (${provider.name}) is full (${currentCount}/${maxCap}). Placing Patient #${patient_id} in automated waitlist.`);
+            console.log(`Auto-Queue: Provider #${provider_id} (${provider.name}) is full (${currentCount}/${maxCap}). Placing Patient #${resolvedPatientId} in automated waitlist.`);
 
             // Check if patient already in active waitlist for this provider
             const checkWlSql = 'SELECT waitlist_id FROM WAITLIST WHERE patient_id = ? AND provider_id = ? AND status = "Active"';
-            db.query(checkWlSql, [patient_id, provider_id], (wlChkErr, wlChkRows) => {
+            db.query(checkWlSql, [resolvedPatientId, provider_id], (wlChkErr, wlChkRows) => {
                 if (!wlChkErr && wlChkRows && wlChkRows.length > 0) {
                     return res.status(200).json({
                         message: `You are already queued in ${provider.name}'s priority waitlist. Your position will automatically escalate as queue duration advances.`,
@@ -969,7 +984,7 @@ app.post('/api/appointments', (req, res) => {
 
                 // Insert into waitlist with ROUTINE priority and crisis_score 1
                 const insertWlSql = 'INSERT INTO WAITLIST (patient_id, provider_id, request_date, crisis_score, priority_level, status) VALUES (?, ?, CURDATE(), 1, "ROUTINE", "Active")';
-                db.query(insertWlSql, [patient_id, provider_id], (insWlErr, insWlRes) => {
+                db.query(insertWlSql, [resolvedPatientId, provider_id], (insWlErr, insWlRes) => {
                     if (insWlErr) {
                         console.error('Error auto-queuing to waitlist:', insWlErr);
                         return res.status(500).json({ error: 'Failed to enroll in provider waitlist.' });
@@ -991,7 +1006,7 @@ app.post('/api/appointments', (req, res) => {
 
         // Provider has capacity: Insert Confirmed appointment
         const insertSql = 'INSERT INTO APPOINTMENTS (patient_id, provider_id, appointment_date, status) VALUES (?, ?, ?, ?)';
-        db.query(insertSql, [patient_id, provider_id, resolvedDate, 'Confirmed'], (insErr, insResult) => {
+        db.query(insertSql, [resolvedPatientId, provider_id, resolvedDate, 'Confirmed'], (insErr, insResult) => {
             if (insErr) {
                 console.error('Error creating appointment:', insErr);
                 return res.status(500).json({ error: 'Failed to create appointment record.' });
@@ -1000,11 +1015,11 @@ app.post('/api/appointments', (req, res) => {
             // Increment provider current_patients count
             db.query('UPDATE PROVIDER SET current_patients = current_patients + 1 WHERE provider_id = ?', [provider_id]);
 
-            console.log(`Appointment #${insResult.insertId} booked for Patient #${patient_id} with Provider #${provider_id}`);
+            console.log(`Appointment #${insResult.insertId} booked for Patient #${resolvedPatientId} with Provider #${provider_id}`);
             res.status(200).json({
                 message: 'Appointment successfully confirmed!',
                 appointment_id: insResult.insertId,
-                patient_id,
+                patient_id: resolvedPatientId,
                 provider_id,
                 provider_name: provider.name,
                 appointment_date: resolvedDate,
@@ -1012,7 +1027,9 @@ app.post('/api/appointments', (req, res) => {
             });
         });
     });
+    });
 });
+
 
 // Fetch All Appointments and Waitlist Records for a Specific Patient
 app.get('/api/patient/:id/appointments', (req, res) => {

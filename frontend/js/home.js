@@ -14,6 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 4. Initialize Affirmation Generator
     initAffirmations();
+
+    // 5. Initialize Quick Appointment Booking
+    initAppointmentBooking();
 });
 
 /**
@@ -268,3 +271,175 @@ function initAffirmations() {
         }, 200);
     });
 }
+
+/**
+ * 5. Quick Appointment Booking Handler
+ */
+function initAppointmentBooking() {
+    const bookingModal = document.getElementById('homeBookingModal');
+    const closeBtn = document.getElementById('closeHomeBookingModalBtn');
+    const cancelBtn = document.getElementById('cancelHomeBookingBtn');
+    const form = document.getElementById('homeAppointmentForm');
+    const doctorName = document.getElementById('modalDoctorName');
+    const doctorRole = document.getElementById('modalDoctorRole');
+    const doctorFee = document.getElementById('modalDoctorFee');
+    const doctorLocation = document.getElementById('modalDoctorLocation');
+    const providerIdInput = document.getElementById('homeBookingProviderId');
+    const patientNameInput = document.getElementById('homePatientNameInput');
+    const patientEmailInput = document.getElementById('homePatientEmailInput');
+    const appointmentDateInput = document.getElementById('homeAppointmentDateInput');
+    const alertBox = document.getElementById('homeBookingAlertBox');
+    const submitBtn = document.getElementById('confirmHomeBookingBtn');
+
+    const openButtons = document.querySelectorAll('.open-booking-modal');
+
+    function closeModal() {
+        if (bookingModal) bookingModal.style.display = 'none';
+        if (alertBox) {
+            alertBox.style.display = 'none';
+            alertBox.innerHTML = '';
+        }
+    }
+
+    // Default appointment date: Tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowStr = tomorrow.toISOString().split('T')[0];
+
+    openButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const providerId = btn.dataset.providerId || 1;
+            const name = btn.dataset.providerName || 'Healthcare Provider';
+            const role = btn.dataset.providerRole || 'Licensed Specialist';
+            const fee = btn.dataset.providerFee || '1500';
+            const location = btn.dataset.providerLocation || 'Dhaka Central';
+
+            if (providerIdInput) providerIdInput.value = providerId;
+            if (doctorName) doctorName.textContent = `Book with ${name}`;
+            if (doctorRole) doctorRole.textContent = role;
+            if (doctorFee) doctorFee.textContent = `৳ ${parseInt(fee, 10).toLocaleString()}`;
+            if (doctorLocation) doctorLocation.textContent = location;
+
+            if (appointmentDateInput) {
+                appointmentDateInput.min = new Date().toISOString().split('T')[0];
+                appointmentDateInput.value = tomorrowStr;
+            }
+
+            // Pre-fill patient details from session if available
+            const storedPatientStr = sessionStorage.getItem('currentPatient') || localStorage.getItem('currentPatient');
+            if (storedPatientStr) {
+                try {
+                    const p = JSON.parse(storedPatientStr);
+                    if (patientNameInput && p.name) patientNameInput.value = p.name;
+                    if (patientEmailInput && p.email) patientEmailInput.value = p.email;
+                } catch (e) {}
+            } else {
+                if (patientNameInput && !patientNameInput.value) patientNameInput.value = 'Tamzid Nawfel';
+                if (patientEmailInput && !patientEmailInput.value) patientEmailInput.value = 'tamzid.nawfel08@gmail.com';
+            }
+
+            if (alertBox) {
+                alertBox.style.display = 'none';
+                alertBox.innerHTML = '';
+            }
+
+            if (submitBtn) {
+                submitBtn.style.display = 'inline-flex';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>✓ Confirm Booking ➔</span>';
+            }
+
+            if (bookingModal) bookingModal.style.display = 'flex';
+        });
+    });
+
+    if (closeBtn) closeBtn.addEventListener('click', closeModal);
+    if (cancelBtn) cancelBtn.addEventListener('click', closeModal);
+
+    if (bookingModal) {
+        bookingModal.addEventListener('click', (e) => {
+            if (e.target === bookingModal) closeModal();
+        });
+    }
+
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const providerId = providerIdInput ? providerIdInput.value : 1;
+            const date = appointmentDateInput ? appointmentDateInput.value : tomorrowStr;
+            const patientName = patientNameInput ? patientNameInput.value.trim() : '';
+            const patientEmail = patientEmailInput ? patientEmailInput.value.trim() : '';
+
+            let patientId = 1;
+            const storedPatientStr = sessionStorage.getItem('currentPatient') || localStorage.getItem('currentPatient');
+            if (storedPatientStr) {
+                try {
+                    const p = JSON.parse(storedPatientStr);
+                    if (p.patient_id) patientId = p.patient_id;
+                } catch (e) {}
+            }
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span>Booking appointment...</span>';
+            }
+
+            try {
+                const res = await fetch('http://localhost:3000/api/appointments', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        patient_id: patientId,
+                        provider_id: parseInt(providerId, 10),
+                        appointment_date: date,
+                        name: patientName,
+                        email: patientEmail
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    if (data.is_waitlisted) {
+                        alertBox.className = 'booking-alert-box warning';
+                        alertBox.innerHTML = `
+                            <strong>⏳ Priority Waitlist Enrolled:</strong> ${data.message}
+                            <div style="margin-top:8px;">
+                                <a href="waitlist.html" style="color:#854d0e; font-weight:700; text-decoration:underline;">View in Waitlist Tracker ➔</a>
+                            </div>
+                        `;
+                    } else {
+                        alertBox.className = 'booking-alert-box success';
+                        alertBox.innerHTML = `
+                            <strong>✓ Appointment Confirmed!</strong> Booking #${data.appointment_id} has been registered with ${data.provider_name} for ${data.appointment_date}.
+                            <div style="margin-top:10px;">
+                                <a href="appointments.html?booked=true&id=${data.appointment_id}" style="display:inline-block; background:#369E63; color:#fff; padding:8px 14px; border-radius:8px; font-weight:700; text-decoration:none; font-size:13px;">View in My Appointments ➔</a>
+                            </div>
+                        `;
+                    }
+                    alertBox.style.display = 'block';
+                    if (submitBtn) submitBtn.style.display = 'none';
+                } else {
+                    alertBox.className = 'booking-alert-box error';
+                    alertBox.innerHTML = `<strong>Error:</strong> ${data.error || 'Failed to book appointment.'}`;
+                    alertBox.style.display = 'block';
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<span>✓ Confirm Booking ➔</span>';
+                    }
+                }
+            } catch (err) {
+                console.error('Booking request error:', err);
+                alertBox.className = 'booking-alert-box error';
+                alertBox.innerHTML = '<strong>Connection Error:</strong> Could not connect to backend server. Please make sure the backend server is running.';
+                alertBox.style.display = 'block';
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = '<span>✓ Confirm Booking ➔</span>';
+                }
+            }
+        });
+    }
+}
+

@@ -448,6 +448,11 @@ body {
     border-color: #065f46;
 }
 
+.tab-link-btn {
+    text-decoration: none;
+}
+
+
 .tab-badge {
     background: #e2e8f0;
     color: #334155;
