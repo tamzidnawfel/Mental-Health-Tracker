@@ -4,7 +4,7 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('providerLoginForm');
-    const emailInput = document.getElementById('email');
+    const providerIdInput = document.getElementById('providerId'); // ASHRAFUL: replace email with provider_id
     const passwordInput = document.getElementById('password');
     const loginBtn = document.getElementById('loginBtn');
     const alertBox = document.getElementById('alertBox');
@@ -17,11 +17,11 @@ document.addEventListener('DOMContentLoaded', () => {
             alertBox.className = 'alert-box';
             alertBox.textContent = '';
 
-            const email = emailInput.value.trim();
+            const provider_id = providerIdInput.value.trim(); // ASHRAFUL: replaced email to provider_id
             const password = passwordInput.value.trim();
 
-            if (!email || !password) {
-                alertBox.textContent = 'Please enter your clinical email or name and password.';
+            if (!provider_id || !password) {
+                alertBox.textContent = 'Please enter your Provider ID and password.'; // ASHRAFUL: Updated message to provider_id error
                 alertBox.className = 'alert-box alert-error';
                 alertBox.style.display = 'block';
                 return;
@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch('http://localhost:3000/api/provider-login', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
+                    body: JSON.stringify({ provider_id, password }) // ASHRAFUL
                 });
 
                 const data = await response.json();
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }, 1000);
                 } else {
                     alertBox.className = 'alert-box alert-error';
-                    alertBox.textContent = data.error || 'Invalid credentials. Please verify your email and password.';
+                    alertBox.textContent = data.error || 'Invalid credentials. Please verify your Provider ID and password.'; // ASHRAFUL
                     alertBox.style.display = 'block';
                     loginBtn.disabled = false;
                     loginBtn.innerHTML = '<span>Access Clinical Workspace</span><span class="login-icon-badge">➔</span>';

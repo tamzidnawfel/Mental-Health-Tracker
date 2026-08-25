@@ -343,22 +343,22 @@ app.post('/api/provider-register', (req, res) => {
     });
 });
 
-// Provider Login API (Authenticates by Email or Name and Password)
+// Provider Login API (Authenticates by Provider ID or Name and Password) // ASHRAFUL
 app.post('/api/provider-login', (req, res) => {
-    const { email, password } = req.body;
+    const { provider_id, password } = req.body; // ASHRAFUL updated from email to provider_id
 
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Please enter your email/username and password.' });
+    if (!provider_id || !password) {                                     // ASHRAFUL
+        return res.status(400).json({ error: 'Please enter your Provider ID/Name and password.' });
     }
 
-    const trimmedInput = email.trim();
+    const trimmedInput = provider_id.toString().trim(); // ASHRAFUL
     const trimmedPassword = password.trim();
 
+    // ASHRAFUL changes in const sql line 358-389: replaced email with provider_id
     const sql = `
         SELECT 
             p.provider_id,
             p.name,
-            p.email,
             p.session_fee,
             p.max_capacity,
             p.current_patients,
@@ -384,7 +384,7 @@ app.post('/api/provider-login', (req, res) => {
         LEFT JOIN SPECIALIZATION s ON ps.spec_id = s.spec_id
         LEFT JOIN PROVIDER_LANGUAGES pl ON p.provider_id = pl.provider_id
         LEFT JOIN LANGUAGES l ON pl.language_code = l.language_code
-        WHERE (p.email = ? OR p.name = ?) AND (p.password = ? OR p.password IS NULL OR p.password = '123')
+        WHERE (p.provider_id = ? OR p.name = ?) AND (p.password = ? OR p.password IS NULL OR p.password = '123')
         GROUP BY p.provider_id
     `;
 
@@ -395,7 +395,7 @@ app.post('/api/provider-login', (req, res) => {
         }
 
         if (results.length === 0) {
-            return res.status(401).json({ error: 'Invalid credentials. Please verify your email/name and password.' });
+            return res.status(401).json({ error: 'Invalid credentials. Please verify your Provider ID and password.' }); // ASHRAFUL
         }
 
         const provider = results[0];
@@ -1133,12 +1133,14 @@ app.get('/api/patient/:id/appointments', (req, res) => {
                     let confirmedCount = 0;
                     let completedCount = 0;
                     let cancelledCount = 0;
+                    let referredCount = 0; // ASHRAFUL: for tracking REFERRED appointments from PATIENTS
 
                     apts.forEach(a => {
                         const st = (a.status || '').toLowerCase();
                         if (st === 'confirmed' || st === 'scheduled' || st === 'active') confirmedCount++;
                         else if (st === 'completed') completedCount++;
                         else if (st === 'cancelled') cancelledCount++;
+                        else if (st === 'referred') referredCount++; // ASHRAFUL: for tracking REFERRED appointments from PATIENTS
                     });
 
                     const activeWaitlistCount = wl.filter(w => (w.status || '').toLowerCase() === 'active').length;
@@ -1796,6 +1798,114 @@ app.get('/api/pages', (req, res) => {
     const frontendDir = path.join(__dirname, '../frontend');
     const pages = getHtmlFiles(frontendDir);
     res.status(200).json(pages);
+});
+
+// ==========================================
+// V2 APIs (NON-CONFLICTING) // ASHRAFUL
+// ==========================================
+
+app.get('/api/provider/:id/appointments-v2', (req, res) => {
+    const providerId = req.params.id;
+    const query = `
+        SELECT a.*, p.name as patient_name 
+        FROM appointments a
+        JOIN patient p ON a.patient_id = p.patient_id
+        WHERE a.provider_id = ?
+    `;
+    db.query(query, [providerId], (err, results) => {
+        if (err) return res.status(500).json(err);
+        res.json(results);
+    });
+});
+
+app.put('/api/appointments-v2/:id/status', (req, res) => {
+    const apptId = req.params.id;
+    const { status } = req.body;
+    db.query('UPDATE appointments SET status = ? WHERE appointment_id = ?', [status, apptId], (err) => {
+        if (err) return res.status(500).json(err);
+        res.json({ success: true });
+    });
+});
+
+app.get('/api/providers-v2', (req, res) => {
+    const excludeId = req.query.exclude || 0;
+    db.query('SELECT provider_id, name FROM provider WHERE provider_id != ?', [excludeId], (err, results) => {
+        if (err) return res.status(500).json(err);
+        res.json(results);
+    });
+});
+
+app.post('/api/referrals-v2', (req, res) => {
+    const { patient_id, source_provider_id, target_provider_id, notes, appointment_id } = req.body;
+    
+    const insertQuery = `
+        INSERT INTO referrals (patient_id, source_provider_id, target_provider_id, referral_date, status, notes)
+        VALUES (?, ?, ?, CURDATE(), 'Pending', ?)
+    `;
+    
+    db.query(insertQuery, [patient_id, source_provider_id, target_provider_id, notes], (err, result) => {
+        if (err) return res.status(500).json(err);
+        
+        db.query('UPDATE appointments SET status = ? WHERE appointment_id = ?', ['referred', appointment_id], (err2) => {
+            if (err2) return res.status(500).json(err2);
+            res.json({ success: true, referral_id: result.insertId });
+        });
+    });
+});
+
+app.get('/api/provider/:id/referrals-v2', (req, res) => {
+    const providerId = req.params.id;
+
+    const incomingQuery = `
+        SELECT r.*, p.name as patient_name, sp.name as source_name
+        FROM referrals r
+        JOIN patient p ON r.patient_id = p.patient_id
+        JOIN provider sp ON r.source_provider_id = sp.provider_id
+        WHERE r.target_provider_id = ?
+    `;
+
+    const outgoingQuery = `
+        SELECT r.*, p.name as patient_name, tp.name as target_name
+        FROM referrals r
+        JOIN patient p ON r.patient_id = p.patient_id
+        JOIN provider tp ON r.target_provider_id = tp.provider_id
+        WHERE r.source_provider_id = ?
+    `;
+
+    db.query(incomingQuery, [providerId], (err, incoming) => {
+        if (err) return res.status(500).json(err);
+        db.query(outgoingQuery, [providerId], (err2, outgoing) => {
+            if (err2) return res.status(500).json(err2);
+            res.json({ incoming, outgoing });
+        });
+    });
+});
+
+app.put('/api/referrals-v2/:id', (req, res) => {
+    const referralId = req.params.id;
+    const { status, target_provider_id } = req.body;
+
+    db.query('UPDATE referrals SET status = ? WHERE referral_id = ?', [status, referralId], (err) => {
+        if (err) return res.status(500).json(err);
+
+        if (status === 'Accepted') {
+            db.query('SELECT patient_id FROM referrals WHERE referral_id = ?', [referralId], (err2, results) => {
+                if (err2 || results.length === 0) return res.status(500).json(err2 || {error: "Referral not found"});
+                
+                const patientId = results[0].patient_id;
+                const apptQuery = `
+                    INSERT INTO appointments (patient_id, provider_id, referral_id, appointment_date, status)
+                    VALUES (?, ?, ?, CURDATE(), 'Scheduled')
+                `;
+                db.query(apptQuery, [patientId, target_provider_id, referralId], (err3) => {
+                    if (err3) return res.status(500).json(err3);
+                    res.json({ success: true, message: 'Referral accepted and appointment created.' });
+                });
+            });
+        } else {
+            res.json({ success: true, message: 'Referral rejected.' });
+        }
+    });
 });
 
 const PORT = 3000;

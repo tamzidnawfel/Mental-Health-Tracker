@@ -295,6 +295,7 @@ function renderAppointmentCard(a) {
     const isConfirmed = (a.status || '').toLowerCase() === 'confirmed' || (a.status || '').toLowerCase() === 'scheduled';
     const isCompleted = (a.status || '').toLowerCase() === 'completed';
     const isCancelled = (a.status || '').toLowerCase() === 'cancelled';
+    const isReferred = (a.status || '').toLowerCase() === 'referred'; // ASHRAFUL: to correctly show referred status
 
     let cardClassModifier = 'confirmed-card';
     let statusBadgeHtml = '<span class="status-badge confirmed">● Confirmed &amp; Active</span>';
@@ -305,6 +306,9 @@ function renderAppointmentCard(a) {
     } else if (isCancelled) {
         cardClassModifier = 'cancelled-card';
         statusBadgeHtml = '<span class="status-badge cancelled">✕ Cancelled</span>';
+    } else if (isReferred) {                                        // ASHRAFUL: to correctly show referred status
+    cardClassModifier = 'referred-card';
+    statusBadgeHtml = '<span class="status-badge" style="background:#e0f2fe; color:#0369a1;">↗ Referred to Another Provider</span>';
     }
 
     const typePillClass = isClinic ? 'clinic-pill' : 'therapist-pill';
