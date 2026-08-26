@@ -70,6 +70,30 @@ header {
     background: rgba(255, 255, 255, 0.15);
 }
 
+.nav-provider-btn {
+    background-color: rgba(255, 255, 255, 0.16);
+    color: var(--white);
+    border: 1.5px solid rgba(255, 255, 255, 0.6);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    padding: 0.55rem 1.25rem;
+    border-radius: 30px;
+    backdrop-filter: blur(8px);
+    transition: all 0.25s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.nav-provider-btn:hover {
+    background-color: var(--white);
+    color: var(--primary);
+    border-color: var(--white);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+
 .nav-login-btn {
     background-color: var(--white);
     color: var(--primary);
