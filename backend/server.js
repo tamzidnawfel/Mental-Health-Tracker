@@ -16,6 +16,64 @@ const db = mysql.createConnection({
     database: 'mental_health_tracker'
 });
 
+const ACCESSIBILITY_CONFIG = {
+    distanceBarrierKm: 5,
+    financialBarrierByBracket: {
+        '10–30k': 'High Financial Barrier',
+        '10-30k': 'High Financial Barrier',
+        '10000-30000': 'High Financial Barrier',
+        '30–50k': 'Moderate Financial Barrier',
+        '30-50k': 'Moderate Financial Barrier',
+        '30000-50000': 'Moderate Financial Barrier',
+        '50000+': 'Low Financial Barrier',
+        '50k+': 'Low Financial Barrier'
+    }
+};
+
+function normalizeIncomeBracket(value) {
+    const bracket = String(value || '').trim().toLowerCase().replace(/,/g, '').replace(/\s+/g, '');
+    if (['10–30k', '10-30k', '10000-30000'].includes(bracket)) return '10–30k';
+    if (['30–50k', '30-50k', '30000-50000'].includes(bracket)) return '30–50k';
+    if (['50k+', '50000+'].includes(bracket)) return '50k+';
+    return null;
+}
+
+function haversineDistanceKm(latitude1, longitude1, latitude2, longitude2) {
+    const earthRadiusKm = 6371;
+    const toRadians = degrees => degrees * Math.PI / 180;
+    const latitudeDifference = toRadians(latitude2 - latitude1);
+    const longitudeDifference = toRadians(longitude2 - longitude1);
+    const a = Math.sin(latitudeDifference / 2) ** 2
+        + Math.cos(toRadians(latitude1)) * Math.cos(toRadians(latitude2))
+        * Math.sin(longitudeDifference / 2) ** 2;
+    return earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function accessibilityClassification(financialBarrier, distanceBarrier) {
+    if (financialBarrier === 'High Financial Barrier') {
+        return distanceBarrier ? 'Severe Accessibility Barrier' : 'Financial Barrier';
+    }
+    if (financialBarrier === 'Moderate Financial Barrier') {
+        return distanceBarrier ? 'Financial + Distance Barrier' : 'Moderate Financial Barrier';
+    }
+    if (financialBarrier === 'Low Financial Barrier') {
+        return distanceBarrier ? 'Distance Barrier' : 'No Major Barrier';
+    }
+    return 'Insufficient Data';
+}
+
+function accessibilitySeverity(classification) {
+    return {
+        'Severe Accessibility Barrier': 6,
+        'Financial + Distance Barrier': 5,
+        'Financial Barrier': 4,
+        'Moderate Financial Barrier': 3,
+        'Distance Barrier': 2,
+        'No Major Barrier': 1,
+        'Insufficient Data': 0
+    }[classification] || 0;
+}
+
 db.connect((err) => {
     if (err) {
         console.error('Database connection failed: ' + err.stack);
@@ -52,6 +110,16 @@ db.connect((err) => {
                     console.log("Added 'email' column to PROVIDER table.");
                     db.query("UPDATE PROVIDER SET email = CONCAT('provider', provider_id, '@mindcare.org') WHERE email IS NULL OR email = ''");
                 }
+            });
+        }
+    });
+
+    // Ensure city column exists in PROVIDER table
+    db.query("SHOW COLUMNS FROM PROVIDER LIKE 'city'", (colErr, rows) => {
+        if (!colErr && rows && rows.length === 0) {
+            db.query("ALTER TABLE PROVIDER ADD COLUMN city VARCHAR(100) DEFAULT NULL", (alterErr) => {
+                if (alterErr) console.error("Could not add city column to PROVIDER:", alterErr);
+                else console.log("Added 'city' column to PROVIDER table.");
             });
         }
     });
@@ -137,13 +205,18 @@ function generateAutomatedPassword() {
 
 // Register Patient API
 app.post('/api/register', (req, res) => {
-    const { name, email, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, latitude, longitude } = req.body;
+    const { name, email, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, district_id, subregion_id, latitude, longitude } = req.body;
     
     if (!email) {
         return res.status(400).json({ error: 'Email address is required.' });
     }
 
     const trimmedEmail = email.trim();
+    const districtId = district_id ? parseInt(district_id, 10) : null;
+    const subregionId = subregion_id ? parseInt(subregion_id, 10) : null;
+    const finalCity = (city || '').trim();
+    const lat = latitude !== undefined && latitude !== null && latitude !== '' ? parseFloat(latitude) : null;
+    const lng = longitude !== undefined && longitude !== null && longitude !== '' ? parseFloat(longitude) : null;
 
     // Check if patient email already exists in database
     db.query('SELECT patient_id, email FROM PATIENT WHERE email = ?', [trimmedEmail], (checkErr, checkRows) => {
@@ -162,17 +235,17 @@ app.post('/api/register', (req, res) => {
 
         const generatedPassword = generateAutomatedPassword();
 
-        const sql = 'INSERT INTO PATIENT (name, email, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, latitude, longitude, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+        const sql = 'INSERT INTO PATIENT (name, email, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, latitude, longitude, district_id, subregion_id, password) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
-        db.query(sql, [name, trimmedEmail, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, latitude, longitude, generatedPassword], (err, result) => {
+        db.query(sql, [name, trimmedEmail, phone, date_of_birth, income_bracket, preferred_language, street, finalCity, zip_code, lat, lng, districtId, subregionId, generatedPassword], (err, result) => {
             if (err) {
                 if (err.code === 'ER_DUP_ENTRY') {
                     return res.status(409).json({ error: 'Account already exists. Proceed to login', exists: true });
                 }
 
-                // Fallback in case password column was not yet added
-                const fallbackSql = 'INSERT INTO PATIENT (name, email, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, latitude, longitude) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-                db.query(fallbackSql, [name, trimmedEmail, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, latitude, longitude], (fallbackErr, fallbackRes) => {
+                // Fallback in case subregion_id or password column was not yet added
+                const fallbackSql = 'INSERT INTO PATIENT (name, email, phone, date_of_birth, income_bracket, preferred_language, street, city, zip_code, latitude, longitude, district_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                db.query(fallbackSql, [name, trimmedEmail, phone, date_of_birth, income_bracket, preferred_language, street, finalCity, zip_code, lat, lng, districtId], (fallbackErr, fallbackRes) => {
                     if (fallbackErr) {
                         if (fallbackErr.code === 'ER_DUP_ENTRY') {
                             return res.status(409).json({ error: 'Account already exists. Proceed to login', exists: true });
@@ -186,19 +259,25 @@ app.post('/api/register', (req, res) => {
                         patient_id: fallbackRes.insertId,
                         password: generatedPassword,
                         name,
-                        email: trimmedEmail
+                        email: trimmedEmail,
+                        city: finalCity,
+                        district_id: districtId,
+                        subregion_id: subregionId
                     });
                 });
                 return;
             }
 
-            console.log('New patient added with ID:', result.insertId, '| Generated Password:', generatedPassword);
+            console.log('New patient added with ID:', result.insertId, '| Area/City:', finalCity, '| Subregion ID:', subregionId, '| Generated Password:', generatedPassword);
             res.status(200).json({ 
                 message: 'Patient registered successfully!', 
                 patient_id: result.insertId,
                 password: generatedPassword,
                 name,
-                email: trimmedEmail
+                email: trimmedEmail,
+                city: finalCity,
+                district_id: districtId,
+                subregion_id: subregionId
             });
         });
     });
@@ -212,7 +291,7 @@ app.post('/api/patient-login', (req, res) => {
         return res.status(400).json({ error: 'Please provide both email address and password.' });
     }
 
-    const sql = 'SELECT patient_id, name, email, phone, preferred_language, city FROM PATIENT WHERE email = ? AND password = ?';
+    const sql = 'SELECT patient_id, name, email, phone, preferred_language, city, district_id, latitude, longitude FROM PATIENT WHERE email = ? AND password = ?';
     db.query(sql, [email.trim(), password.trim()], (err, results) => {
         if (err) {
             console.error('Login query error:', err);
@@ -246,6 +325,10 @@ app.post('/api/provider-register', (req, res) => {
         session_fee,
         max_capacity,
         district_id,
+        subregion_id,
+        city,
+        latitude,
+        longitude,
         accepts_insurance,
         license_no,
         years_of_experience,
@@ -265,8 +348,14 @@ app.post('/api/provider-register', (req, res) => {
     const fee = parseFloat(session_fee) || 1500.00;
     const capacity = parseInt(max_capacity, 10) || 20;
     const districtId = parseInt(district_id, 10) || 1;
+    const subregionId = subregion_id ? parseInt(subregion_id, 10) : null;
+    const finalCity = (city || '').trim();
     const insurance = accepts_insurance ? 1 : 0;
     const pwd = password.trim();
+
+    // Coordinates: from request or default
+    const lat = latitude !== undefined && latitude !== null && latitude !== '' ? parseFloat(latitude) : 23.8103;
+    const lng = longitude !== undefined && longitude !== null && longitude !== '' ? parseFloat(longitude) : 90.4125;
 
     // Check if provider with this email or name already exists
     db.query('SELECT provider_id, name, email FROM PROVIDER WHERE email = ? OR name = ?', [trimmedEmail, trimmedName], (chkErr, chkRows) => {
@@ -279,69 +368,80 @@ app.post('/api/provider-register', (req, res) => {
             return res.status(409).json({ error: 'A provider with this email or practice name is already registered. Please proceed to login.', exists: true });
         }
 
-        // Default coordinates based on district
-        const defaultLat = 23.8103;
-        const defaultLng = 90.4125;
-
         const insertProviderSql = `
             INSERT INTO PROVIDER 
-            (name, email, password, session_fee, max_capacity, rating_avg, latitude, longitude, accepts_insurance, district_id, current_patients) 
-            VALUES (?, ?, ?, ?, ?, 5.00, ?, ?, ?, ?, 0)
+            (name, email, password, session_fee, max_capacity, rating_avg, latitude, longitude, accepts_insurance, district_id, subregion_id, city, current_patients) 
+            VALUES (?, ?, ?, ?, ?, 5.00, ?, ?, ?, ?, ?, ?, 0)
         `;
 
-        db.query(insertProviderSql, [trimmedName, trimmedEmail, pwd, fee, capacity, defaultLat, defaultLng, insurance, districtId], (pErr, pResult) => {
+        db.query(insertProviderSql, [trimmedName, trimmedEmail, pwd, fee, capacity, lat, lng, insurance, districtId, subregionId, finalCity], (pErr, pResult) => {
             if (pErr) {
                 console.error('Error inserting provider:', pErr);
-                return res.status(500).json({ error: 'Failed to create provider account.' });
-            }
-
-            const newProviderId = pResult.insertId;
-
-            // Insert into subclass table
-            if (type === 'clinic') {
-                const regNo = registration_no || `CL-REG-${String(newProviderId).padStart(3, '0')}`;
-                const beds = parseInt(total_beds, 10) || 30;
-                db.query('INSERT INTO CLINICS (provider_id, registration_no, total_beds) VALUES (?, ?, ?)', [newProviderId, regNo, beds], (cErr) => {
-                    if (cErr) console.error('Error creating clinic subclass:', cErr);
-                });
-            } else {
-                // Default to therapist
-                const licNo = license_no || `BMDC-TR-${String(newProviderId).padStart(3, '0')}`;
-                const exp = parseInt(years_of_experience, 10) || 5;
-                db.query('INSERT INTO THERAPISTS (provider_id, license_no, years_of_experience) VALUES (?, ?, ?)', [newProviderId, licNo, exp], (tErr) => {
-                    if (tErr) console.error('Error creating therapist subclass:', tErr);
+                // Fallback without subregion_id if column missing
+                const fallbackSql = `
+                    INSERT INTO PROVIDER 
+                    (name, email, password, session_fee, max_capacity, rating_avg, latitude, longitude, accepts_insurance, district_id, city, current_patients) 
+                    VALUES (?, ?, ?, ?, ?, 5.00, ?, ?, ?, ?, ?, 0)
+                `;
+                return db.query(fallbackSql, [trimmedName, trimmedEmail, pwd, fee, capacity, lat, lng, insurance, districtId, finalCity], (fbErr, fbRes) => {
+                    if (fbErr) return res.status(500).json({ error: 'Failed to create provider account.' });
+                    handleSubclasses(fbRes.insertId);
                 });
             }
 
-            // Insert Specializations
-            const specs = Array.isArray(spec_ids) ? spec_ids : (spec_ids ? String(spec_ids).split(',') : [1]);
-            specs.forEach(sId => {
-                const sNum = parseInt(sId, 10);
-                if (!isNaN(sNum)) {
-                    db.query('INSERT IGNORE INTO PROVIDER_SPECIALIZATIONS (provider_id, spec_id) VALUES (?, ?)', [newProviderId, sNum]);
+            handleSubclasses(pResult.insertId);
+
+            function handleSubclasses(newProviderId) {
+                // Insert into subclass table
+                if (type === 'clinic') {
+                    const regNo = registration_no || `CL-REG-${String(newProviderId).padStart(3, '0')}`;
+                    const beds = parseInt(total_beds, 10) || 30;
+                    db.query('INSERT INTO CLINICS (provider_id, registration_no, total_beds) VALUES (?, ?, ?)', [newProviderId, regNo, beds], (cErr) => {
+                        if (cErr) console.error('Error creating clinic subclass:', cErr);
+                    });
+                } else {
+                    // Default to therapist
+                    const licNo = license_no || `BMDC-TR-${String(newProviderId).padStart(3, '0')}`;
+                    const exp = parseInt(years_of_experience, 10) || 5;
+                    db.query('INSERT INTO THERAPISTS (provider_id, license_no, years_of_experience) VALUES (?, ?, ?)', [newProviderId, licNo, exp], (tErr) => {
+                        if (tErr) console.error('Error creating therapist subclass:', tErr);
+                    });
                 }
-            });
 
-            // Insert Languages
-            const langs = Array.isArray(language_codes) ? language_codes : (language_codes ? String(language_codes).split(',') : ['001', '002']);
-            langs.forEach(lCode => {
-                if (lCode) {
-                    db.query('INSERT IGNORE INTO PROVIDER_LANGUAGES (provider_id, language_code) VALUES (?, ?)', [newProviderId, String(lCode).trim()]);
-                }
-            });
+                // Insert Specializations
+                const specs = Array.isArray(spec_ids) ? spec_ids : (spec_ids ? String(spec_ids).split(',') : [1]);
+                specs.forEach(sId => {
+                    const sNum = parseInt(sId, 10);
+                    if (!isNaN(sNum)) {
+                        db.query('INSERT IGNORE INTO PROVIDER_SPECIALIZATIONS (provider_id, spec_id) VALUES (?, ?)', [newProviderId, sNum]);
+                    }
+                });
 
-            console.log(`Provider registered successfully! ID: #${newProviderId} (${trimmedName} - ${type})`);
+                // Insert Languages
+                const langs = Array.isArray(language_codes) ? language_codes : (language_codes ? String(language_codes).split(',') : ['001', '002']);
+                langs.forEach(lCode => {
+                    if (lCode) {
+                        db.query('INSERT IGNORE INTO PROVIDER_LANGUAGES (provider_id, language_code) VALUES (?, ?)', [newProviderId, String(lCode).trim()]);
+                    }
+                });
 
-            res.status(200).json({
-                message: 'Provider registration successful! You can now log in to access your clinical dashboard.',
-                provider_id: newProviderId,
-                name: trimmedName,
-                email: trimmedEmail,
-                provider_type: type
-            });
+                console.log(`Provider registered successfully! ID: #${newProviderId} (${trimmedName} - ${type}, Subregion: ${subregionId}, Area: ${finalCity})`);
+
+                res.status(200).json({
+                    message: 'Provider registration successful! You can now log in to access your clinical dashboard.',
+                    provider_id: newProviderId,
+                    name: trimmedName,
+                    email: trimmedEmail,
+                    city: finalCity,
+                    district_id: districtId,
+                    subregion_id: subregionId,
+                    provider_type: type
+                });
+            }
         });
     });
 });
+
 
 // Provider Login API (Authenticates by Provider ID or Name and Password) // ASHRAFUL
 app.post('/api/provider-login', (req, res) => {
@@ -364,7 +464,7 @@ app.post('/api/provider-login', (req, res) => {
             p.current_patients,
             p.rating_avg,
             p.district_id,
-            r.district_name,
+                r.district_name,
             CASE 
                 WHEN t.provider_id IS NOT NULL THEN 'therapist'
                 WHEN c.provider_id IS NOT NULL THEN 'clinic'
@@ -577,6 +677,136 @@ app.get('/api/provider/:id/dashboard', (req, res) => {
     });
 });
 
+app.get('/api/provider/:id/cancelled-patients', (req, res) => {
+    const providerId = parseInt(req.params.id, 10);
+    if (!providerId || isNaN(providerId)) {
+        return res.status(400).json({ error: 'Invalid provider ID.' });
+    }
+
+    const sql = `
+        SELECT
+            a.appointment_id,
+            a.patient_id,
+            p.name AS patient_name,
+            p.city AS patient_city,
+            COALESCE(r.district_name, p.city, 'District not recorded') AS district_name,
+            DATE_FORMAT(a.appointment_date, '%Y-%m-%d') AS appointment_date,
+            NULL AS cancellation_date,
+            NULL AS cancellation_reason,
+            pr.provider_id,
+            pr.name AS provider_name,
+            pr.session_fee,
+            a.status
+        FROM APPOINTMENTS a
+        JOIN PATIENT p ON a.patient_id = p.patient_id
+        JOIN PROVIDER pr ON a.provider_id = pr.provider_id
+        LEFT JOIN REGION r ON p.district_id = r.district_id
+        WHERE a.provider_id = ? AND LOWER(a.status) = 'cancelled'
+        ORDER BY a.appointment_date DESC, a.appointment_id DESC
+    `;
+
+    db.query(sql, [providerId], (err, rows) => {
+        if (err) {
+            console.error('Error fetching cancelled patients:', err);
+            return res.status(500).json({ error: 'Failed to load cancelled patients.' });
+        }
+        res.json({ provider_id: providerId, patients: rows || [], cancellation_metadata_available: false });
+    });
+});
+
+// Deterministic financial and geographic accessibility analysis for one provider.
+app.get('/api/provider/:id/accessibility-analysis', (req, res) => {
+    const providerId = parseInt(req.params.id, 10);
+    if (!providerId || isNaN(providerId)) {
+        return res.status(400).json({ error: 'Invalid provider ID.' });
+    }
+
+    const sql = `
+        SELECT
+            p.patient_id,
+            p.name AS patient_name,
+            p.city AS patient_city,
+            r.district_name,
+            p.income_bracket,
+            p.latitude AS patient_latitude,
+            p.longitude AS patient_longitude,
+            pr.provider_id,
+            pr.name AS provider_name,
+            pr.session_fee,
+            pr.latitude AS provider_latitude,
+            pr.longitude AS provider_longitude
+        FROM APPOINTMENTS a
+        JOIN PATIENT p ON a.patient_id = p.patient_id
+        JOIN PROVIDER pr ON a.provider_id = pr.provider_id
+        LEFT JOIN REGION r ON p.district_id = r.district_id
+        WHERE a.provider_id = ?
+        GROUP BY p.patient_id, pr.provider_id, r.district_name
+        ORDER BY p.patient_id
+    `;
+
+    db.query(sql, [providerId], (err, rows) => {
+        if (err) {
+            console.error('Error fetching accessibility analysis:', err);
+            return res.status(500).json({ error: 'Failed to load accessibility analysis.' });
+        }
+
+        const patients = (rows || []).map(row => {
+            const normalizedIncomeBracket = normalizeIncomeBracket(row.income_bracket);
+            const financialBarrier = normalizedIncomeBracket
+                ? ACCESSIBILITY_CONFIG.financialBarrierByBracket[normalizedIncomeBracket]
+                : null;
+            const hasCoordinates = [row.patient_latitude, row.patient_longitude, row.provider_latitude, row.provider_longitude]
+                .every(value => value !== null && value !== undefined && Number.isFinite(Number(value)));
+            const distanceKm = hasCoordinates
+                ? Number(haversineDistanceKm(Number(row.patient_latitude), Number(row.patient_longitude), Number(row.provider_latitude), Number(row.provider_longitude)).toFixed(2))
+                : null;
+            const distanceBarrier = distanceKm === null ? null : distanceKm > ACCESSIBILITY_CONFIG.distanceBarrierKm;
+            const overallClassification = financialBarrier && distanceBarrier !== null
+                ? accessibilityClassification(financialBarrier, distanceBarrier)
+                : 'Insufficient Data';
+
+            return {
+                patient_id: row.patient_id,
+                patient_name: row.patient_name,
+                district_name: row.district_name || row.patient_city || 'District not recorded',
+                income_bracket: normalizedIncomeBracket || row.income_bracket || 'Not recorded',
+                provider_id: row.provider_id,
+                provider_name: row.provider_name,
+                distance_km: distanceKm,
+                distance_barrier: distanceBarrier,
+                financial_barrier: financialBarrier || 'Not classified',
+                session_fee: row.session_fee,
+                affordability_indicator: null,
+                overall_classification: overallClassification,
+                severity: accessibilitySeverity(overallClassification)
+            };
+        }).sort((first, second) => second.severity - first.severity || first.patient_name.localeCompare(second.patient_name));
+
+        const summary = {
+            total_patients: patients.length,
+            financial_barriers: patients.filter(patient => ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier)).length,
+            distance_barriers: patients.filter(patient => patient.distance_barrier === true).length,
+            both_barriers: patients.filter(patient => patient.distance_barrier === true && ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier)).length,
+            no_major_barriers: patients.filter(patient => patient.overall_classification === 'No Major Barrier').length
+        };
+        const incomeBrackets = ['10–30k', '30–50k', '50k+'];
+        const incomeCounts = incomeBrackets.map(bracket => ({ bracket, count: patients.filter(patient => patient.income_bracket === bracket).length }));
+        const classificationCounts = [...new Set(patients.map(patient => patient.overall_classification))].map(classification => ({ classification, count: patients.filter(patient => patient.overall_classification === classification).length }));
+
+        res.json({
+            provider_id: providerId,
+            config: ACCESSIBILITY_CONFIG,
+            summary,
+            charts: {
+                income_brackets: incomeCounts,
+                distance_barriers: [{ label: 'Distance Barrier', count: summary.distance_barriers }, { label: 'No Distance Barrier', count: patients.filter(patient => patient.distance_barrier === false).length }],
+                classifications: classificationCounts
+            },
+            patients
+        });
+    });
+});
+
 // Admit Waitlisted Patient (Provider books appointment directly from waitlist queue)
 app.post('/api/provider/:id/admit-waitlist', (req, res) => {
     const providerId = parseInt(req.params.id, 10);
@@ -620,6 +850,34 @@ app.post('/api/provider/:id/admit-waitlist', (req, res) => {
                 appointment_date,
                 status: 'Confirmed'
             });
+        });
+    });
+});
+
+// Mark Appointment as Cancelled
+app.put('/api/appointments/:id/cancel', (req, res) => {
+    const appointmentId = parseInt(req.params.id, 10);
+    if (!appointmentId || isNaN(appointmentId)) {
+        return res.status(400).json({ error: 'Valid appointment ID required.' });
+    }
+
+    const findSql = 'SELECT appointment_id, provider_id, status FROM APPOINTMENTS WHERE appointment_id = ?';
+    db.query(findSql, [appointmentId], (findErr, rows) => {
+        if (findErr || !rows || rows.length === 0) {
+            return res.status(404).json({ error: 'Appointment not found.' });
+        }
+
+        const appointment = rows[0];
+        const wasActive = ['confirmed', 'scheduled', 'active'].includes((appointment.status || '').toLowerCase());
+        db.query("UPDATE APPOINTMENTS SET status = 'Cancelled' WHERE appointment_id = ?", [appointmentId], (updateErr) => {
+            if (updateErr) {
+                console.error('Error cancelling appointment:', updateErr);
+                return res.status(500).json({ error: 'Failed to cancel appointment.' });
+            }
+            if (wasActive && appointment.provider_id) {
+                db.query('UPDATE PROVIDER SET current_patients = GREATEST(0, current_patients - 1) WHERE provider_id = ?', [appointment.provider_id]);
+            }
+            res.json({ appointment_id: appointmentId, status: 'Cancelled' });
         });
     });
 });
@@ -715,6 +973,26 @@ app.get('/api/regions', (req, res) => {
         res.status(200).json(results);
     });
 });
+
+// Fetch subregions / subdistricts (supports optional ?district_id=X)
+app.get('/api/subregions', (req, res) => {
+    const districtId = req.query.district_id ? parseInt(req.query.district_id, 10) : null;
+    let sql = 'SELECT subregion_id, subregion_Name AS subregion_name, Latitude AS latitude, Longitude AS longitude, Population AS population, district_id FROM subregion';
+    const params = [];
+    if (districtId) {
+        sql += ' WHERE district_id = ?';
+        params.push(districtId);
+    }
+    sql += ' ORDER BY subregion_Name ASC';
+    db.query(sql, params, (err, results) => {
+        if (err) {
+            console.error('Error fetching subregions:', err);
+            return res.status(500).json({ error: 'Failed to load subregions' });
+        }
+        res.status(200).json(results);
+    });
+});
+
 
 // Fetch languages
 app.get('/api/languages', (req, res) => {
@@ -1792,6 +2070,83 @@ app.get('/api/zone-detection', (req, res) => {
     req.url = '/api/zone-detections';
     app.handle(req, res);
 });
+
+// Feature 7: Subzone / Subdistrict Detector (Analytical Query for Subregions)
+app.get('/api/subzone-detections', (req, res) => {
+    const districtId = req.query.district_id ? parseInt(req.query.district_id, 10) : null;
+    let whereSql = '';
+    const params = [];
+    if (districtId) {
+        whereSql = 'WHERE s.district_id = ?';
+        params.push(districtId);
+    }
+
+    const sql = `
+        SELECT 
+            s.subregion_id,
+            s.subregion_Name AS subdistrict_name,
+            s.Population AS population,
+            s.district_id,
+            r.district_name,
+            COUNT(p_closest.provider_id) AS total_providers,
+            CASE 
+                WHEN COUNT(p_closest.provider_id) = 0 THEN s.Population 
+                ELSE ROUND(s.Population / COUNT(p_closest.provider_id)) 
+            END AS population_per_provider,
+            CASE 
+                WHEN COUNT(p_closest.provider_id) = 0 
+                     OR (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 75000 
+                THEN 'RED'
+                WHEN (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 50000 
+                THEN 'YELLOW'
+                ELSE 'GREEN'
+            END AS zone_flag
+        FROM subregion s
+        JOIN region r ON s.district_id = r.district_id
+        LEFT JOIN (
+            SELECT 
+                p.provider_id,
+                p.district_id,
+                (
+                    SELECT s2.subregion_id 
+                    FROM subregion s2 
+                    WHERE s2.district_id = p.district_id 
+                    ORDER BY (POW(CAST(p.latitude AS DECIMAL(10,6)) - CAST(s2.Latitude AS DECIMAL(10,6)), 2) + POW(CAST(p.longitude AS DECIMAL(10,6)) - CAST(s2.Longitude AS DECIMAL(10,6)), 2)) ASC 
+                    LIMIT 1
+                ) AS closest_subregion_id
+            FROM provider p
+        ) p_closest ON s.subregion_id = p_closest.closest_subregion_id
+        ${whereSql}
+        GROUP BY s.subregion_id, s.subregion_Name, s.Population, s.district_id, r.district_name
+        ORDER BY s.district_id ASC, 
+            CASE 
+                WHEN COUNT(p_closest.provider_id) = 0 
+                     OR (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 75000 THEN 1
+                WHEN (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 50000 THEN 2
+                ELSE 3
+            END ASC,
+            population_per_provider DESC
+    `;
+
+    db.query(sql, params, (err, results) => {
+        if (err) {
+            console.error('Subzone analytical query error:', err);
+            return res.status(500).json({ error: 'Failed to run subzone analytical query.' });
+        }
+
+        res.status(200).json({
+            total_subzones: results.length,
+            subzones: results
+        });
+    });
+});
+
+// Alias for /api/subzone-detection
+app.get('/api/subzone-detection', (req, res) => {
+    req.url = '/api/subzone-detections';
+    app.handle(req, res);
+});
+
 
 // API: Scan directory and return all HTML files
 app.get('/api/pages', (req, res) => {

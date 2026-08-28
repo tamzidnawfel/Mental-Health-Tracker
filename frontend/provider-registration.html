@@ -101,34 +101,37 @@
                 <label for="district_id">District / City Location</label>
                 <select id="district_id" required>
                     <option value="">Select District...</option>
-                    <option value="1">Dhaka Central</option>
-                    <option value="2">Chittagong Metropolitan</option>
-                    <option value="3">Sylhet Sadar</option>
-                    <option value="4">Rajshahi Urban</option>
-                    <option value="5">Khulna City</option>
-                    <option value="6">Barisal District</option>
-                    <option value="7">Rangpur Division</option>
-                    <option value="8">Mymensingh Town</option>
-                    <option value="9">Comilla Metro</option>
-                    <option value="10">Gazipur Industrial Zone</option>
+                    <option value="1">Dhaka</option>
+                    <option value="2">Chittagong</option>
+                    <option value="3">Sylhet</option>
+                    <option value="4">Rajshahi</option>
+                    <option value="5">Khulna</option>
+                    <option value="6">Barisal</option>
+                    <option value="7">Rangpur</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label for="session_fee">Session / Consultation Fee (৳)</label>
-                <input type="number" id="session_fee" required value="1500" min="0" step="50" placeholder="1500">
+            <div class="form-group" id="providerSubregionGroup">
+                <label for="subregion_id">Subregion / Area Location</label>
+                <select id="subregion_id" required>
+                    <option value="">Select District First...</option>
+                </select>
             </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
             <div class="form-group">
-                <label for="max_capacity">Max Patient Capacity</label>
+                <label for="session_fee">Session Fee (৳)</label>
+                <input type="number" id="session_fee" required value="1500" min="0" step="50" placeholder="1500">
+            </div>
+            <div class="form-group">
+                <label for="max_capacity">Max Capacity</label>
                 <input type="number" id="max_capacity" required value="20" min="1" max="100" placeholder="20">
             </div>
             <div class="form-group">
-                <label for="accepts_insurance">Accepts Health Insurance?</label>
+                <label for="accepts_insurance">Accepts Insurance?</label>
                 <select id="accepts_insurance" required>
-                    <option value="1">Yes, Accepts Insurance</option>
-                    <option value="0">No (Direct Billing Only)</option>
+                    <option value="1">Yes</option>
+                    <option value="0">No (Direct Billing)</option>
                 </select>
             </div>
         </div>
