@@ -116,10 +116,12 @@
                 <!-- Navigation Tabs -->
                 <div class="workspace-tabs-bar">
                     <div class="workspace-tabs" id="workspaceTabs">
-                        <button type="button" class="tab-btn active" data-tab="appointments">
+                        <!-- ORIGINAL TABS -->
+
+                        <!-- <button type="button" class="tab-btn active" data-tab="appointments">
                             <span>📅 Booked Appointments</span>
                             <span class="tab-badge" id="tabBadgeAppointments">0</span>
-                        </button>
+                        </button> -->
                         <button type="button" class="tab-btn" data-tab="waitlist">
                             <span>⏳ Priority Waitlist Queue</span>
                             <span class="tab-badge warning-badge" id="tabBadgeWaitlist">0</span>
@@ -127,6 +129,17 @@
                         <button type="button" class="tab-btn" data-tab="patientSearch">
                             <span>📋 Patient Checkup History</span>
                         </button>
+                    
+                        <!-- ASHRAFUL -->
+                        <a href="provider-appointments-v2.html" class="tab-btn tab-link-btn"
+                            title="Open Appointments Manager">
+                            <span>📅 Appointments</span>
+                        </a>
+                        <a href="provider-referrals-v2.html" class="tab-btn tab-link-btn" title="Open Referrals Manager">
+                            <span>↗️ Referrals</span>
+                        </a>
+
+                        <!-- ORIGINAL ZONES LINK TAB -->
                         <a href="zone-detections.html" class="tab-btn tab-link-btn" title="View Regional Zone Detections">
                             <span>🗺️ Zones</span>
                         </a>

@@ -167,7 +167,7 @@
     let pagesData = []; // Store fetched pages globally for search filtering
 
     // Fetch dynamic HTML pages from your Node backend
-    fetch('http://localhost:3000/api/pages')
+    fetch('http://localhost:3000/api/pages-v2')
       .then(res => res.json())
       .then(pages => {
         pagesData = pages.sort((a, b) => b.mtime - a.mtime); // Save data for searching, newest first
