@@ -78,7 +78,7 @@
                 <tr>
                     <td>${appt.appointment_id}</td>
                     <td>${appt.patient_name}</td>
-                    <td>${appt.appointment_date.split('T')[0]}</td>
+                    <td>${new Date(appt.appointment_date).toLocaleDateString('en-US')}</td>
                     <td>${appt.status}</td>
                     <td>
                         ${appt.status !== 'completed' && appt.status !== 'referred' ? `
