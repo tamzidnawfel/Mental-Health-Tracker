@@ -114,16 +114,6 @@ db.connect((err) => {
         }
     });
 
-    // Ensure city column exists in PROVIDER table
-    db.query("SHOW COLUMNS FROM PROVIDER LIKE 'city'", (colErr, rows) => {
-        if (!colErr && rows && rows.length === 0) {
-            db.query("ALTER TABLE PROVIDER ADD COLUMN city VARCHAR(100) DEFAULT NULL", (alterErr) => {
-                if (alterErr) console.error("Could not add city column to PROVIDER:", alterErr);
-                else console.log("Added 'city' column to PROVIDER table.");
-            });
-        }
-    });
-
     // Ensure clinical_notes & prescription columns exist in APPOINTMENTS table
     db.query("SHOW COLUMNS FROM APPOINTMENTS LIKE 'clinical_notes'", (colErr, rows) => {
         if (!colErr && rows && rows.length === 0) {
@@ -326,7 +316,6 @@ app.post('/api/provider-register', (req, res) => {
         max_capacity,
         district_id,
         subregion_id,
-        city,
         latitude,
         longitude,
         accepts_insurance,
@@ -349,7 +338,6 @@ app.post('/api/provider-register', (req, res) => {
     const capacity = parseInt(max_capacity, 10) || 20;
     const districtId = parseInt(district_id, 10) || 1;
     const subregionId = subregion_id ? parseInt(subregion_id, 10) : null;
-    const finalCity = (city || '').trim();
     const insurance = accepts_insurance ? 1 : 0;
     const pwd = password.trim();
 
@@ -370,20 +358,20 @@ app.post('/api/provider-register', (req, res) => {
 
         const insertProviderSql = `
             INSERT INTO PROVIDER 
-            (name, email, password, session_fee, max_capacity, rating_avg, latitude, longitude, accepts_insurance, district_id, subregion_id, city, current_patients) 
-            VALUES (?, ?, ?, ?, ?, 5.00, ?, ?, ?, ?, ?, ?, 0)
+            (name, email, password, session_fee, max_capacity, rating_avg, latitude, longitude, accepts_insurance, district_id, subregion_id, current_patients) 
+            VALUES (?, ?, ?, ?, ?, 5.00, ?, ?, ?, ?, ?, 0)
         `;
 
-        db.query(insertProviderSql, [trimmedName, trimmedEmail, pwd, fee, capacity, lat, lng, insurance, districtId, subregionId, finalCity], (pErr, pResult) => {
+        db.query(insertProviderSql, [trimmedName, trimmedEmail, pwd, fee, capacity, lat, lng, insurance, districtId, subregionId], (pErr, pResult) => {
             if (pErr) {
                 console.error('Error inserting provider:', pErr);
                 // Fallback without subregion_id if column missing
                 const fallbackSql = `
                     INSERT INTO PROVIDER 
-                    (name, email, password, session_fee, max_capacity, rating_avg, latitude, longitude, accepts_insurance, district_id, city, current_patients) 
-                    VALUES (?, ?, ?, ?, ?, 5.00, ?, ?, ?, ?, ?, 0)
+                    (name, email, password, session_fee, max_capacity, rating_avg, latitude, longitude, accepts_insurance, district_id, current_patients) 
+                    VALUES (?, ?, ?, ?, ?, 5.00, ?, ?, ?, ?, 0)
                 `;
-                return db.query(fallbackSql, [trimmedName, trimmedEmail, pwd, fee, capacity, lat, lng, insurance, districtId, finalCity], (fbErr, fbRes) => {
+                return db.query(fallbackSql, [trimmedName, trimmedEmail, pwd, fee, capacity, lat, lng, insurance, districtId], (fbErr, fbRes) => {
                     if (fbErr) return res.status(500).json({ error: 'Failed to create provider account.' });
                     handleSubclasses(fbRes.insertId);
                 });
@@ -425,14 +413,13 @@ app.post('/api/provider-register', (req, res) => {
                     }
                 });
 
-                console.log(`Provider registered successfully! ID: #${newProviderId} (${trimmedName} - ${type}, Subregion: ${subregionId}, Area: ${finalCity})`);
+                console.log(`Provider registered successfully! ID: #${newProviderId} (${trimmedName} - ${type}, District: ${districtId}, Subregion: ${subregionId})`);
 
                 res.status(200).json({
                     message: 'Provider registration successful! You can now log in to access your clinical dashboard.',
                     provider_id: newProviderId,
                     name: trimmedName,
                     email: trimmedEmail,
-                    city: finalCity,
                     district_id: districtId,
                     subregion_id: subregionId,
                     provider_type: type
@@ -688,8 +675,7 @@ app.get('/api/provider/:id/cancelled-patients', (req, res) => {
             a.appointment_id,
             a.patient_id,
             p.name AS patient_name,
-            p.city AS patient_city,
-            COALESCE(r.district_name, p.city, 'District not recorded') AS district_name,
+            r.district_name,
             DATE_FORMAT(a.appointment_date, '%Y-%m-%d') AS appointment_date,
             NULL AS cancellation_date,
             NULL AS cancellation_reason,
@@ -725,7 +711,6 @@ app.get('/api/provider/:id/accessibility-analysis', (req, res) => {
         SELECT
             p.patient_id,
             p.name AS patient_name,
-            p.city AS patient_city,
             r.district_name,
             p.income_bracket,
             p.latitude AS patient_latitude,
@@ -768,7 +753,7 @@ app.get('/api/provider/:id/accessibility-analysis', (req, res) => {
             return {
                 patient_id: row.patient_id,
                 patient_name: row.patient_name,
-                district_name: row.district_name || row.patient_city || 'District not recorded',
+                district_name: row.district_name || 'District not recorded',
                 income_bracket: normalizedIncomeBracket || row.income_bracket || 'Not recorded',
                 provider_id: row.provider_id,
                 provider_name: row.provider_name,
