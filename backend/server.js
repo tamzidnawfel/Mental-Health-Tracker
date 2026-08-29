@@ -1955,7 +1955,6 @@ app.put('/api/appointments-v2/:id/rating', (req, res) => {
     });
 });
 
-
 // API: Scan directory and return all HTML files
 app.get('/api/pages-v2', (req, res) => {
     const frontendDir = path.join(__dirname, '../frontend');
