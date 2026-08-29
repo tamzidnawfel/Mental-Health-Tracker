@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Ratings - MindCare</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #369E63;
+            --primary-dark: #237447;
+            --primary-light: #EBF7EE;
+            --primary-glow: rgba(54, 158, 99, 0.35);
+            --secondary-accent: #0284C7;
+            --warm-accent: #E5832E;
+            --warm-light: #FEF3C7;
+            --danger-red: #E11D48;
+            --danger-light: #FFE4E6;
+            
+            --bg-page: #F8FAFC;
+            --bg-card: #FFFFFF;
+            --bg-card-subtle: #F1F5F9;
+            --text-main: #0F172A;
+            --text-muted: #64748B;
+            --text-light: #94A3B8;
+            
+            --border-color: #E2E8F0;
+            --border-hover: #CBD5E1;
+            
+            --shadow-sm: 0 2px 8px rgba(15, 23, 42, 0.04);
+            --shadow-md: 0 10px 25px -3px rgba(15, 23, 42, 0.07), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+            --shadow-lg: 0 20px 40px -10px rgba(15, 23, 42, 0.12), 0 8px 16px -4px rgba(15, 23, 42, 0.06);
+            
+            --radius-sm: 10px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            --radius-full: 9999px;
+            
+            --font-heading: 'Outfit', sans-serif;
+            --font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background-color: var(--bg-page);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        /* Top Announcement Bar */
+        .top-announcement-bar {
+            background: linear-gradient(90deg, #1E293B 0%, #0F172A 100%);
+            color: #F8FAFC;
+            padding: 0.6rem 1.5rem;
+            font-size: 0.88rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .bar-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+            text-align: center;
+        }
+
+        .pulse-indicator {
+            width: 9px;
+            height: 9px;
+            background-color: #22C55E;
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7);
+            animation: pulse-live 1.8s infinite;
+        }
+
+        @keyframes pulse-live {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .hotline-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(225, 29, 72, 0.2);
+            color: #FDA4AF;
+            border: 1px solid rgba(244, 63, 94, 0.4);
+            padding: 0.2rem 0.75rem;
+            border-radius: var(--radius-full);
+            font-weight: 700;
+            text-decoration: none;
+            font-size: 0.82rem;
+            transition: all 0.2s ease;
+        }
+
+        .hotline-chip:hover {
+            background: #E11D48;
+            color: #FFFFFF;
+            transform: translateY(-1px);
+        }
+
+        /* Navbar */
+        .navbar {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0.9rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+
+        .logo-icon-wrapper {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: #FFFFFF;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 12px var(--primary-glow);
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-name {
+            font-family: var(--font-heading);
+            font-weight: 700;
+            font-size: 1.35rem;
+            letter-spacing: -0.5px;
+            color: var(--text-main);
+            line-height: 1.1;
+        }
+
+        .brand-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: var(--text-muted);
+            font-size: 0.92rem;
+            font-weight: 600;
+            padding: 0.5rem 0.75rem;
+            border-radius: var(--radius-sm);
+            transition: all 0.2s ease;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary);
+            background-color: var(--primary-light);
+        }
+
+        .nav-user-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .user-profile-pill {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            background: var(--bg-card-subtle);
+            border: 1px solid var(--border-color);
+            padding: 0.35rem 0.9rem 0.35rem 0.45rem;
+            border-radius: var(--radius-full);
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #10B981, #059669);
+            color: #FFFFFF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            text-align: left;
+        }
+
+        .user-greeting {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            line-height: 1;
+        }
+
+        .user-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--text-main);
+            max-width: 140px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .btn-logout {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: #FFFFFF;
+            border: 1px solid var(--border-color);
+            color: var(--text-muted);
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 600;
+            padding: 0.5rem 0.9rem;
+            border-radius: var(--radius-full);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: var(--danger-light);
+            color: var(--danger-red);
+            border-color: #FECDD3;
+        }
+
+        /* Page Content Styles Preserved */
+        .container { max-width: 900px; margin: 30px auto; background: white; padding: 30px; border-radius: var(--radius-lg); box-shadow: var(--shadow-md); }
+        h2 { font-family: var(--font-heading); font-size: 1.4rem; font-weight: 700; color: var(--text-main); margin-top: 20px; margin-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 30px; }
+        th, td { padding: 12px; border: 1px solid #ddd; text-align: left; }
+        th { background-color: var(--primary); color: white; }
+        button { padding: 6px 12px; cursor: pointer; border: none; border-radius: 4px; font-family: inherit; font-weight: 600; }
+        .btn-rate { background-color: #007bff; color: white; }
+        .btn-update { background-color: #ffc107; color: black; }
+        select { padding: 6px; border-radius: 4px; border: 1px solid #ccc; font-family: inherit; }
+    </style>
+</head>
+<body>
+
+<!-- TOP EMERGENCY ALERT BAR -->
+<div class="top-announcement-bar">
+    <div class="bar-container">
+        <span class="pulse-indicator"></span>
+        <span class="bar-text"><strong>24/7 Crisis Support Available:</strong> Speak with a confidential crisis counselor anytime.</span>
+        <a href="tel:988" class="hotline-chip">📞 Call 988 / 017-000-MIND</a>
+    </div>
+</div>
+
+<!-- MAIN NAVBAR -->
+<header class="navbar">
+    <div class="nav-container">
+        <a href="home.html" class="brand-logo">
+            <div class="logo-icon-wrapper">
+                <span class="logo-plus">+</span>
+            </div>
+            <div class="brand-text">
+                <span class="brand-name">MindCare</span>
+                <span class="brand-sub">Mental Health &amp; Wellness</span>
+            </div>
+        </a>
+
+        <nav class="nav-links">
+            <a href="home.html" class="nav-link">Home</a>
+            <a href="directory.html" class="nav-link">Find Doctors &amp; Clinics</a>
+            <a href="appointments.html" class="nav-link">My Appointments</a>
+            <a href="appointment-ratings-v2.html" class="nav-link active">Rate Appointments</a>
+            <a href="waitlist.html" class="nav-link">Waitlist Tracker</a>
+            <a href="home.html#wellness-hub" class="nav-link">Daily Wellness</a>
+        </nav>
+
+        <div class="nav-user-actions">
+            <div class="user-profile-pill" id="userProfilePill">
+                <div class="user-avatar" id="userAvatar">P</div>
+                <div class="user-info">
+                    <span class="user-greeting">Welcome,</span>
+                    <span class="user-name" id="navPatientName">Patient</span>
+                </div>
+            </div>
+            <button type="button" class="btn-logout" id="logoutBtn" title="Log out from MindCare">
+                <span>Logout</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+            </button>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <h2>Unrated Appointments</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Appt ID</th>
+                <th>Provider Name</th>
+                <th>Date</th>
+                <th>Rating</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="unrated-list"></tbody>
+    </table>
+
+    <h2>Rated Appointments (History & Updates)</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Appt ID</th>
+                <th>Provider Name</th>
+                <th>Date</th>
+                <th>Rated </th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody id="rated-list"></tbody>
+    </table>
+</div>
+
+<script>
+    // Patient Session Initialization matching teammate's pattern
+    const storedPatientStr = sessionStorage.getItem('currentPatient') || localStorage.getItem('currentPatient');
+    let currentPatient = null;
+    try {
+        currentPatient = JSON.parse(storedPatientStr);
+    } catch (e) {}
+
+    const patientId = currentPatient ? (currentPatient.patient_id || currentPatient.id || 1) : 1;
+    
+    // Set user info in navbar if available
+    if (currentPatient) {
+        const fullName = currentPatient.name || 'Patient';
+        const firstName = fullName.split(' ')[0] || fullName;
+        const navPatientName = document.getElementById('navPatientName');
+        const userAvatar = document.getElementById('userAvatar');
+        if (navPatientName) navPatientName.textContent = fullName;
+        if (userAvatar) userAvatar.textContent = firstName.charAt(0).toUpperCase();
+    }
+
+    // Logout button handler
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', () => {
+            if (confirm('Are you sure you want to log out of MindCare?')) {
+                sessionStorage.removeItem('currentPatient');
+                localStorage.removeItem('currentPatient');
+                window.location.href = 'patient-login.html';
+            }
+        });
+    }
+
+    async function loadRatingsData() {
+        const res = await fetch(`/api/patient/${patientId}/ratings-v2`);
+        const data = await res.json();
+
+        const unratedTbody = document.getElementById('unrated-list');
+        unratedTbody.innerHTML = '';
+        (data.unrated || []).forEach(appt => {
+            unratedTbody.innerHTML += `
+                <tr>
+                    <td>${appt.appointment_id}</td>
+                    <td>${appt.provider_name}</td>
+                    <td>${new Date(appt.appointment_date).toLocaleDateString('en-US')}</td>
+                    <td>
+                        <select id="rating-unrated-${appt.appointment_id}">
+                            <option value="5">5 - Excellent</option>
+                            <option value="4">4 - Good</option>
+                            <option value="3">3 - Average</option>
+                            <option value="2">2 - Poor</option>
+                            <option value="1">1 - Terrible</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn-rate" onclick="submitRating(${appt.appointment_id})">Submit Rating</button>
+                    </td>
+                </tr>
+            `;
+        });
+
+        const ratedTbody = document.getElementById('rated-list');
+        ratedTbody.innerHTML = '';
+        (data.rated || []).forEach(appt => {
+            ratedTbody.innerHTML += `
+                <tr>
+                    <td>${appt.appointment_id}</td>
+                    <td>${appt.provider_name}</td>
+                    <td>${new Date(appt.appointment_date).toLocaleDateString('en-US')}</td>
+                    <td>
+                        <select id="rating-rated-${appt.appointment_id}">
+                            <option value="5" ${appt.rating == 5 ? 'selected' : ''}>5 - Excellent</option>
+                            <option value="4" ${appt.rating == 4 ? 'selected' : ''}>4 - Good</option>
+                            <option value="3" ${appt.rating == 3 ? 'selected' : ''}>3 - Average</option>
+                            <option value="2" ${appt.rating == 2 ? 'selected' : ''}>2 - Poor</option>
+                            <option value="1" ${appt.rating == 1 ? 'selected' : ''}>1 - Terrible</option>
+                        </select>
+                    </td>
+                    <td>
+                        <button class="btn-update" onclick="updateRating(${appt.appointment_id})">Update Rating</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    async function submitRating(appointmentId) {
+        const rating = document.getElementById(`rating-unrated-${appointmentId}`).value;
+        const res = await fetch(`/api/appointments-v2/${appointmentId}/rating`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rating })
+        });
+
+        if (res.ok) {
+            loadRatingsData();
+            alert('Rating submitted successfully!');
+        } else {
+            alert('Error submitting rating');
+        }
+    }
+
+    async function updateRating(appointmentId) {
+        const rating = document.getElementById(`rating-rated-${appointmentId}`).value;
+        const res = await fetch(`/api/appointments-v2/${appointmentId}/rating`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rating })
+        });
+
+        if (res.ok) {
+            loadRatingsData();
+            alert('Rating updated successfully!');
+        } else {
+            alert('Error updating rating');
+        }
+    }
+
+    loadRatingsData();
+</script>
+
+</body>
+</html>

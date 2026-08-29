@@ -1793,11 +1793,51 @@ app.get('/api/zone-detection', (req, res) => {
     app.handle(req, res);
 });
 
-// API: Scan directory and return all HTML files
-app.get('/api/pages', (req, res) => {
-    const frontendDir = path.join(__dirname, '../frontend');
-    const pages = getHtmlFiles(frontendDir);
-    res.status(200).json(pages);
+
+// ==========================================
+// V2 APIS fOR PATIENT RATINGS // ASHRAFUL
+// ==========================================
+
+// Get unrated and rated completed appointments for a patient
+app.get('/api/patient/:id/ratings-v2', (req, res) => {
+    const patientId = req.params.id;
+
+    const unratedQuery = `
+        SELECT a.appointment_id, a.appointment_date, p.name AS provider_name 
+        FROM appointments a
+        JOIN provider p ON a.provider_id = p.provider_id
+        WHERE a.patient_id = ? AND a.status = 'Completed' AND a.rating IS NULL
+    `;
+
+    const ratedQuery = `
+        SELECT a.appointment_id, a.appointment_date, a.rating, p.name AS provider_name 
+        FROM appointments a
+        JOIN provider p ON a.provider_id = p.provider_id
+        WHERE a.patient_id = ? AND a.rating IS NOT NULL
+    `;
+
+    db.query(unratedQuery, [patientId], (err, unrated) => {
+        if (err) return res.status(500).json(err);
+        
+        db.query(ratedQuery, [patientId], (err2, rated) => {
+            if (err2) return res.status(500).json(err2);
+            
+            res.json({ unrated, rated });
+        });
+    });
+});
+
+// Submit or update rating for an appointment
+app.put('/api/appointments-v2/:id/rating', (req, res) => {
+    const appointmentId = req.params.id;
+    const { rating } = req.body;
+
+    const updateQuery = `UPDATE appointments SET rating = ? WHERE appointment_id = ?`;
+    
+    db.query(updateQuery, [rating, appointmentId], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ success: true, message: 'Rating saved successfully' });
+    });
 });
 
 // ==========================================
@@ -1829,7 +1869,14 @@ app.put('/api/appointments-v2/:id/status', (req, res) => {
 
 app.get('/api/providers-v2', (req, res) => {
     const excludeId = req.query.exclude || 0;
-    db.query('SELECT provider_id, name FROM provider WHERE provider_id != ?', [excludeId], (err, results) => {
+    const query = `
+        SELECT p.provider_id, p.name 
+        FROM provider p
+        LEFT JOIN therapists t ON p.provider_id = t.provider_id
+        LEFT JOIN clinics c ON p.provider_id = c.provider_id
+        WHERE p.provider_id != ? AND (t.provider_id IS NOT NULL OR c.provider_id IS NOT NULL)
+    `;
+    db.query(query, [excludeId], (err, results) => {
         if (err) return res.status(500).json(err);
         res.json(results);
     });
@@ -1906,6 +1953,13 @@ app.put('/api/referrals-v2/:id', (req, res) => {
             res.json({ success: true, message: 'Referral rejected.' });
         }
     });
+});
+
+// API: Scan directory and return all HTML files
+app.get('/api/pages-v2', (req, res) => {
+    const frontendDir = path.join(__dirname, '../frontend');
+    const pages = getHtmlFiles(frontendDir);
+    res.status(200).json(pages);
 });
 
 const PORT = 3000;

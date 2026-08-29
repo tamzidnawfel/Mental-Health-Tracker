@@ -33,7 +33,8 @@ CREATE TABLE `appointments` (
   `provider_id` int(11) NOT NULL,
   `referral_id` int(11) DEFAULT NULL,
   `appointment_date` date NOT NULL,
-  `status` varchar(50) NOT NULL
+  `status` varchar(50) NOT NULL,
+  `rating` decimal(3,2) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
@@ -180,10 +181,10 @@ CREATE TABLE `patient` (
 --
 
 INSERT INTO `patient` (`patient_id`, `name`, `email`, `phone`, `date_of_birth`, `income_bracket`, `preferred_language`, `created_at`, `latitude`, `longitude`, `street`, `city`, `zip_code`, `district_id`, `password`) VALUES
-(1, 'Tamzid Nawfel', 'tamzid.nawfel08@gmail.com', '01646743373', '2004-08-08', NULL, NULL, '2026-08-17 15:15:21', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(2, 'Sanjid Hasnat', 'sanjid.hasnat@gmaill.com', '1235834560', '2004-12-22', NULL, NULL, '2026-08-17 15:16:39', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(1, 'Tamzid Nawfel', 'tamzid.nawfel08@gmail.com', '01646743373', '2004-08-08', NULL, NULL, '2026-08-17 15:15:21', NULL, NULL, NULL, NULL, NULL, NULL, 123),
+(2, 'Sanjid Hasnat', 'sanjid.hasnat@gmail.com', '1235834560', '2004-12-22', NULL, NULL, '2026-08-17 15:16:39', NULL, NULL, NULL, NULL, NULL, NULL, 123),
 (3, 'Ashraful', 'ashraful@gmail.com', '01717324849', '2005-05-04', NULL, NULL, '2026-08-17 16:10:15', NULL, NULL, NULL, NULL, NULL, NULL, 123),
-(4, 'sandjid hasnat', 'nasdomac@gmail.com', '01646743374', '2003-12-04', NULL, NULL, '2026-08-18 08:33:45', NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+(4, 'sandjid hasnat', 'nasdomac@gmail.com', '01646743374', '2003-12-04', NULL, NULL, '2026-08-18 08:33:45', NULL, NULL, NULL, NULL, NULL, NULL, 123);
 
 -- --------------------------------------------------------
 
@@ -611,6 +612,26 @@ INSERT INTO `provider_specializations` (`provider_id`, `spec_id`) VALUES
 --
 -- Indexes for dumped tables
 --
+
+--
+-- Triggers `appointments`
+--
+DELIMITER $$
+CREATE TRIGGER `update_provider_rating_after_appointment` 
+AFTER UPDATE ON `appointments` FOR EACH ROW 
+BEGIN
+    IF NEW.rating IS NOT NULL AND (OLD.rating IS NULL OR OLD.rating <> NEW.rating) THEN
+        UPDATE provider
+        SET rating_avg = (
+            SELECT COALESCE(AVG(rating), 0)
+            FROM appointments
+            WHERE provider_id = NEW.provider_id AND rating IS NOT NULL
+        )
+        WHERE provider_id = NEW.provider_id;
+    END IF;
+END
+$$
+DELIMITER ;
 
 --
 -- Indexes for table `appointments`
