@@ -61,16 +61,23 @@
         </div>
 
         <div class="form-group">
-            <label for="city">City</label>
-            <select id="city" required>
-                <option value="">Select City</option>
-                <option value="Dhaka">Dhaka</option>
-                <option value="Chittagong">Chittagong</option>
-                <option value="Sylhet">Sylhet</option>
-                <option value="Rajshahi">Rajshahi</option>
-                <option value="Khulna">Khulna</option>
-                <option value="Barisal">Barisal</option>
-                <option value="Rangpur">Rangpur</option>
+            <label for="district_id">District / City</label>
+            <select id="district_id" required>
+                <option value="">Select District</option>
+                <option value="1" data-name="Dhaka">Dhaka</option>
+                <option value="2" data-name="Chittagong">Chittagong</option>
+                <option value="3" data-name="Sylhet">Sylhet</option>
+                <option value="4" data-name="Rajshahi">Rajshahi</option>
+                <option value="5" data-name="Khulna">Khulna</option>
+                <option value="6" data-name="Barisal">Barisal</option>
+                <option value="7" data-name="Rangpur">Rangpur</option>
+            </select>
+        </div>
+
+        <div class="form-group" id="subregionGroup">
+            <label for="subregion_id">Subregion / Area</label>
+            <select id="subregion_id" required>
+                <option value="">Select District First...</option>
             </select>
         </div>
 
