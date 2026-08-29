@@ -1794,51 +1794,6 @@ app.get('/api/zone-detection', (req, res) => {
 });
 
 
-// ==========================================
-// V2 APIS fOR PATIENT RATINGS // ASHRAFUL
-// ==========================================
-
-// Get unrated and rated completed appointments for a patient
-app.get('/api/patient/:id/ratings-v2', (req, res) => {
-    const patientId = req.params.id;
-
-    const unratedQuery = `
-        SELECT a.appointment_id, a.appointment_date, p.name AS provider_name 
-        FROM appointments a
-        JOIN provider p ON a.provider_id = p.provider_id
-        WHERE a.patient_id = ? AND a.status = 'Completed' AND a.rating IS NULL
-    `;
-
-    const ratedQuery = `
-        SELECT a.appointment_id, a.appointment_date, a.rating, p.name AS provider_name 
-        FROM appointments a
-        JOIN provider p ON a.provider_id = p.provider_id
-        WHERE a.patient_id = ? AND a.rating IS NOT NULL
-    `;
-
-    db.query(unratedQuery, [patientId], (err, unrated) => {
-        if (err) return res.status(500).json(err);
-        
-        db.query(ratedQuery, [patientId], (err2, rated) => {
-            if (err2) return res.status(500).json(err2);
-            
-            res.json({ unrated, rated });
-        });
-    });
-});
-
-// Submit or update rating for an appointment
-app.put('/api/appointments-v2/:id/rating', (req, res) => {
-    const appointmentId = req.params.id;
-    const { rating } = req.body;
-
-    const updateQuery = `UPDATE appointments SET rating = ? WHERE appointment_id = ?`;
-    
-    db.query(updateQuery, [rating, appointmentId], (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json({ success: true, message: 'Rating saved successfully' });
-    });
-});
 
 // ==========================================
 // V2 APIs (NON-CONFLICTING) // ASHRAFUL
@@ -1952,6 +1907,52 @@ app.put('/api/referrals-v2/:id', (req, res) => {
         } else {
             res.json({ success: true, message: 'Referral rejected.' });
         }
+    });
+});
+
+// ==========================================
+// V2 APIS fOR PATIENT RATINGS // ASHRAFUL
+// ==========================================
+
+// Get unrated and rated completed appointments for a patient
+app.get('/api/patient/:id/ratings-v2', (req, res) => {
+    const patientId = req.params.id;
+
+    const unratedQuery = `
+        SELECT a.appointment_id, a.appointment_date, p.name AS provider_name 
+        FROM appointments a
+        JOIN provider p ON a.provider_id = p.provider_id
+        WHERE a.patient_id = ? AND a.status = 'Completed' AND a.rating IS NULL
+    `;
+
+    const ratedQuery = `
+        SELECT a.appointment_id, a.appointment_date, a.rating, p.name AS provider_name 
+        FROM appointments a
+        JOIN provider p ON a.provider_id = p.provider_id
+        WHERE a.patient_id = ? AND a.rating IS NOT NULL
+    `;
+
+    db.query(unratedQuery, [patientId], (err, unrated) => {
+        if (err) return res.status(500).json(err);
+        
+        db.query(ratedQuery, [patientId], (err2, rated) => {
+            if (err2) return res.status(500).json(err2);
+            
+            res.json({ unrated, rated });
+        });
+    });
+});
+
+// Submit or update rating for an appointment
+app.put('/api/appointments-v2/:id/rating', (req, res) => {
+    const appointmentId = req.params.id;
+    const { rating } = req.body;
+
+    const updateQuery = `UPDATE appointments SET rating = ? WHERE appointment_id = ?`;
+    
+    db.query(updateQuery, [rating, appointmentId], (err, result) => {
+        if (err) return res.status(500).json(err);
+        res.json({ success: true, message: 'Rating saved successfully' });
     });
 });
 
