@@ -1,0 +1,161 @@
+/**
+ * V2 ASHRAFUL: Separate modular stylesheet for appointments and referral management
+ */
+
+/* V2 Action Button Group */
+.v2-action-group {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    align-items: center;
+}
+
+/* Base style for all sleek V2 action buttons */
+.v2-action-group button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.v2-action-group button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.08), 0 2px 4px -1px rgba(0, 0, 0, 0.04);
+}
+
+.v2-action-group button:active {
+    transform: translateY(0);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* 1. Complete Button */
+.btn-action-complete-v2 {
+    background-color: #f0fdf4;
+    color: #15803d;
+    border-color: #bbf7d0;
+}
+
+.btn-action-complete-v2:hover {
+    background-color: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+}
+
+/* 2. Reschedule Button */
+.btn-action-reschedule-v2 {
+    background-color: #f0fdfa;
+    color: #0f766e;
+    border-color: #ccfbf1;
+}
+
+.btn-action-reschedule-v2:hover {
+    background-color: #ccfbf1;
+    color: #115e59;
+    border-color: #5eead4;
+}
+
+/* 3. Refer Button */
+.btn-action-refer-v2 {
+    background-color: #faf5ff;
+    color: #7e22ce;
+    border-color: #f3e8ff;
+}
+
+.btn-action-refer-v2:hover {
+    background-color: #f3e8ff;
+    color: #6b21a8;
+    border-color: #e9d5ff;
+}
+
+/* 4. Cancel Button */
+.btn-action-cancel-v2 {
+    background-color: #fef2f2;
+    color: #b91c1c;
+    border-color: #fee2e2;
+}
+
+.btn-action-cancel-v2:hover {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #fecaca;
+}
+
+/* V2 Status Pills override / extension */
+.status-pill.confirmed {
+    background-color: #eff6ff;
+    color: #1e40af;
+    border: 1px solid #bfdbfe;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.status-pill.completed {
+    background-color: #ecfdf5;
+    color: #065f46;
+    border: 1px solid #a7f3d0;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+.status-pill.cancelled {
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    display: inline-block;
+}
+
+/* Patient Cell formatting inside V2 tables */
+.patient-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.patient-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background-color: #e2e8f0;
+    color: #334155;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+
+.patient-details {
+    display: flex;
+    flex-direction: column;
+}
+
+.patient-name-text {
+    font-weight: 700;
+    color: #0f172a;
+    font-size: 13px;
+}
+
+.patient-id-sub {
+    font-size: 11px;
+    color: #64748b;
+}

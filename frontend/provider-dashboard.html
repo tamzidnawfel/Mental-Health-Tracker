@@ -7,6 +7,8 @@
     <title>Provider Workspace - MindCare Clinical Dashboard</title>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/provider-dashboard.css">
+    <!-- V2 ASHRAFUL: custom styles for appointments and referrals -->
+    <link rel="stylesheet" href="css/provider-appointments-referrals-v2.css">
 </head>
 
 <body>
@@ -116,12 +118,18 @@
                 <!-- Navigation Tabs -->
                 <div class="workspace-tabs-bar">
                     <div class="workspace-tabs" id="workspaceTabs">
-                        <!-- ORIGINAL TABS -->
-
-                        <!-- <button type="button" class="tab-btn active" data-tab="appointments">
+                        <!-- V2 // ASHRAFUL: Appointments Tab Button -->
+                        <button type="button" class="tab-btn active" data-tab="appointments-v2">
                             <span>📅 Booked Appointments</span>
-                            <span class="tab-badge" id="tabBadgeAppointments">0</span>
-                        </button> -->
+                            <span class="tab-badge" id="tabBadgeAppointmentsV2">0</span>
+                        </button>
+
+                        <!-- V2 // ASHRAFUL: Referrals Tab Button -->
+                        <button type="button" class="tab-btn" data-tab="referrals-v2">
+                            <span>↗️ Referrals</span>
+                            <span class="tab-badge" id="tabBadgeReferralsV2">0</span>
+                        </button>
+
                         <button type="button" class="tab-btn" data-tab="waitlist">
                             <span>⏳ Priority Waitlist Queue</span>
                             <span class="tab-badge warning-badge" id="tabBadgeWaitlist">0</span>
@@ -129,15 +137,6 @@
                         <button type="button" class="tab-btn" data-tab="patientSearch">
                             <span>📋 Patient Checkup History</span>
                         </button>
-                    
-                        <!-- ASHRAFUL -->
-                        <a href="provider-appointments-v2.html" class="tab-btn tab-link-btn"
-                            title="Open Appointments Manager">
-                            <span>📅 Appointments</span>
-                        </a>
-                        <a href="provider-referrals-v2.html" class="tab-btn tab-link-btn" title="Open Referrals Manager">
-                            <span>↗️ Referrals</span>
-                        </a>
 
                         <!-- ORIGINAL ZONES LINK TAB -->
                         <a href="zone-detections.html" class="tab-btn tab-link-btn" title="View Regional Zone Detections">
@@ -159,8 +158,8 @@
                     </div>
                 </div>
 
-                <!-- TAB 1 CONTENT: BOOKED APPOINTMENTS -->
-                <div class="tab-pane active" id="paneAppointments">
+                <!-- V2 // ASHRAFUL: TAB 1 CONTENT: BOOKED APPOINTMENTS -->
+                <div class="tab-pane active" id="paneAppointmentsV2">
                     <div class="table-container">
                         <table class="clinical-table">
                             <thead>
@@ -172,10 +171,10 @@
                                     <th>Consultation Fee</th>
                                     <th>Status</th>
                                     <th>Clinical History</th>
-                                    <th>Actions</th>
+                                    <th>Actions (Complete / Cancel / Reschedule / Refer)</th>
                                 </tr>
                             </thead>
-                            <tbody id="appointmentsTableBody">
+                            <tbody id="appointmentsTableBodyV2">
                                 <tr>
                                     <td colspan="8" class="loading-td">
                                         <div class="spinner-inline"></div> Loading booked patient appointments...
@@ -183,6 +182,68 @@
                                 </tr>
                             </tbody>
                         </table>
+                    </div>
+                </div>
+                <!-- V2 // ASHRAFUL: TAB 2 CONTENT: REFERRALS MANAGER -->
+                <div class="tab-pane" id="paneReferralsV2" style="display: none; padding: 24px;">
+                    <div style="display: flex; flex-direction: column; gap: 32px;">
+                        
+                        <!-- Outgoing Referrals Section -->
+                        <div>
+                            <div style="margin-bottom: 12px;">
+                                <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0;">📤 Outgoing Referrals Sent</h4>
+                                <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Specialist colleagues you have referred patients to.</p>
+                            </div>
+                            <div class="table-container">
+                                <table class="clinical-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Patient Name</th>
+                                            <th>Patient Location</th>
+                                            <th>Target Doctor & Location</th>
+                                            <th>Referral Date</th>
+                                            <th>Status</th>
+                                            <th>Clinical History</th>
+                                            <th>Notes / Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="outgoingReferralsTableBodyV2">
+                                        <tr>
+                                            <td colspan="7" class="loading-td">Loading outgoing referrals...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Incoming Referrals Section -->
+                        <div>
+                            <div style="margin-bottom: 12px;">
+                                <h4 style="font-size: 15px; font-weight: 700; color: #0f172a; margin: 0;">📥 Incoming Referrals Received</h4>
+                                <p style="font-size: 12px; color: #64748b; margin: 2px 0 0 0;">Referral requests sent by other providers requiring your review.</p>
+                            </div>
+                            <div class="table-container">
+                                <table class="clinical-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Patient Name</th>
+                                            <th>Patient Location</th>
+                                            <th>Referring Doctor</th>
+                                            <th>Referral Date</th>
+                                            <th>Status</th>
+                                            <th>Clinical History</th>
+                                            <th>Actions (Accept / Reject)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="incomingReferralsTableBodyV2">
+                                        <tr>
+                                            <td colspan="7" class="loading-td">Loading incoming referrals...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
                     </div>
                 </div>
 
@@ -372,6 +433,40 @@
     </footer>
 
     <script src="js/provider-dashboard.js"></script>
+    <!-- V2 //ASHRAFUL: appointments js -->
+    <script src="js/provider-appointments-v2.js"></script>
+    <!-- V2 // ASHRAFUL: referrals js -->
+    <script src="js/provider-referrals-v2.js"></script>
+
+    <!-- V2 // ASHRAFUL: Global Workspace Search Filter FIX -->
+    <script>
+        document.getElementById('patientSearchInput').addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase().trim();
+            const activePaneAppointments = document.getElementById('paneAppointmentsV2');
+            const activePaneReferrals = document.getElementById('paneReferralsV2');
+
+            let targetTbodies = [];
+
+            if (activePaneAppointments && activePaneAppointments.style.display !== 'none') {
+                targetTbodies = [document.getElementById('appointmentsTableBodyV2')];
+            } else if (activePaneReferrals && activePaneReferrals.style.display !== 'none') {
+                targetTbodies = [
+                    document.getElementById('outgoingReferralsTableBodyV2'),
+                    document.getElementById('incomingReferralsTableBodyV2')
+                ];
+            }
+
+            targetTbodies.forEach(tbody => {
+                if (!tbody) return;
+                const rows = tbody.querySelectorAll('tr');
+                rows.forEach(row => {
+                    if (row.querySelector('.loading-td') || row.querySelector('.empty-td')) return;
+                    const text = row.textContent.toLowerCase();
+                    row.style.display = text.includes(query) ? '' : 'none';
+                });
+            });
+        });
+    </script>
 
 </body>
 

@@ -822,8 +822,8 @@ app.post('/api/provider/:id/admit-waitlist', (req, res) => {
             // Update waitlist entry status to Assigned
             db.query("UPDATE WAITLIST SET status = 'Assigned' WHERE waitlist_id = ?", [waitlist_id]);
 
-            // Increment provider capacity
-            db.query('UPDATE PROVIDER SET current_patients = current_patients + 1 WHERE provider_id = ?', [providerId]);
+            // ASHRAFUL: commented out Increment provider capacity
+            // db.query('UPDATE PROVIDER SET current_patients = current_patients + 1 WHERE provider_id = ?', [providerId]);
 
             console.log(`Waitlisted Patient #${patientId} admitted by Provider #${providerId} as Appointment #${insRes.insertId}`);
 
@@ -860,7 +860,8 @@ app.put('/api/appointments/:id/cancel', (req, res) => {
                 return res.status(500).json({ error: 'Failed to cancel appointment.' });
             }
             if (wasActive && appointment.provider_id) {
-                db.query('UPDATE PROVIDER SET current_patients = GREATEST(0, current_patients - 1) WHERE provider_id = ?', [appointment.provider_id]);
+                // ASHRAFUL: commented out
+                // db.query('UPDATE PROVIDER SET current_patients = GREATEST(0, current_patients - 1) WHERE provider_id = ?', [appointment.provider_id]);
             }
             res.json({ appointment_id: appointmentId, status: 'Cancelled' });
         });
@@ -893,7 +894,8 @@ app.put('/api/appointments/:id/complete', (req, res) => {
 
             // Decrement provider capacity if it was active
             if (prevStatus !== 'Completed' && prevStatus !== 'Cancelled' && providerId) {
-                db.query('UPDATE PROVIDER SET current_patients = GREATEST(0, current_patients - 1) WHERE provider_id = ?', [providerId]);
+                // ASHRAFUL: commented out
+                // db.query('UPDATE PROVIDER SET current_patients = GREATEST(0, current_patients - 1) WHERE provider_id = ?', [providerId]);
             }
 
             console.log(`Appointment #${appointmentId} marked Completed. Provider #${providerId} slot freed.`);
@@ -1275,8 +1277,8 @@ app.post('/api/appointments', (req, res) => {
                 return res.status(500).json({ error: 'Failed to create appointment record.' });
             }
 
-            // Increment provider current_patients count
-            db.query('UPDATE PROVIDER SET current_patients = current_patients + 1 WHERE provider_id = ?', [provider_id]);
+            // ASHRAFUL: commented out Increment provider current_patients count
+            // db.query('UPDATE PROVIDER SET current_patients = current_patients + 1 WHERE provider_id = ?', [provider_id]);
 
             console.log(`Appointment #${insResult.insertId} booked for Patient #${resolvedPatientId} with Provider #${provider_id}`);
             res.status(200).json({
@@ -2132,175 +2134,14 @@ app.get('/api/subzone-detection', (req, res) => {
     app.handle(req, res);
 });
 
-// ==========================================
-// V2 APIs (NON-CONFLICTING) // ASHRAFUL
-// ==========================================
-
-app.get('/api/provider/:id/appointments-v2', (req, res) => {
-    const providerId = req.params.id;
-    const query = `
-        SELECT a.*, p.name as patient_name 
-        FROM appointments a
-        JOIN patient p ON a.patient_id = p.patient_id
-        WHERE a.provider_id = ?
-    `;
-    db.query(query, [providerId], (err, results) => {
-        if (err) return res.status(500).json(err);
-        res.json(results);
-    });
-});
-
-app.put('/api/appointments-v2/:id/status', (req, res) => {
-    const apptId = req.params.id;
-    const { status } = req.body;
-    db.query('UPDATE appointments SET status = ? WHERE appointment_id = ?', [status, apptId], (err) => {
-        if (err) return res.status(500).json(err);
-        res.json({ success: true });
-    });
-});
-
-app.get('/api/providers-v2', (req, res) => {
-    const excludeId = req.query.exclude || 0;
-    const query = `
-        SELECT p.provider_id, p.name 
-        FROM provider p
-        LEFT JOIN therapists t ON p.provider_id = t.provider_id
-        LEFT JOIN clinics c ON p.provider_id = c.provider_id
-        WHERE p.provider_id != ? AND (t.provider_id IS NOT NULL OR c.provider_id IS NOT NULL)
-    `;
-    db.query(query, [excludeId], (err, results) => {
-        if (err) return res.status(500).json(err);
-        res.json(results);
-    });
-});
-
-app.post('/api/referrals-v2', (req, res) => {
-    const { patient_id, source_provider_id, target_provider_id, notes, appointment_id } = req.body;
-    
-    const insertQuery = `
-        INSERT INTO referrals (patient_id, source_provider_id, target_provider_id, referral_date, status, notes)
-        VALUES (?, ?, ?, CURDATE(), 'Pending', ?)
-    `;
-    
-    db.query(insertQuery, [patient_id, source_provider_id, target_provider_id, notes], (err, result) => {
-        if (err) return res.status(500).json(err);
-        
-        db.query('UPDATE appointments SET status = ? WHERE appointment_id = ?', ['referred', appointment_id], (err2) => {
-            if (err2) return res.status(500).json(err2);
-            res.json({ success: true, referral_id: result.insertId });
-        });
-    });
-});
-
-app.get('/api/provider/:id/referrals-v2', (req, res) => {
-    const providerId = req.params.id;
-
-    const incomingQuery = `
-        SELECT r.*, p.name as patient_name, sp.name as source_name
-        FROM referrals r
-        JOIN patient p ON r.patient_id = p.patient_id
-        JOIN provider sp ON r.source_provider_id = sp.provider_id
-        WHERE r.target_provider_id = ?
-    `;
-
-    const outgoingQuery = `
-        SELECT r.*, p.name as patient_name, tp.name as target_name
-        FROM referrals r
-        JOIN patient p ON r.patient_id = p.patient_id
-        JOIN provider tp ON r.target_provider_id = tp.provider_id
-        WHERE r.source_provider_id = ?
-    `;
-
-    db.query(incomingQuery, [providerId], (err, incoming) => {
-        if (err) return res.status(500).json(err);
-        db.query(outgoingQuery, [providerId], (err2, outgoing) => {
-            if (err2) return res.status(500).json(err2);
-            res.json({ incoming, outgoing });
-        });
-    });
-});
-
-app.put('/api/referrals-v2/:id', (req, res) => {
-    const referralId = req.params.id;
-    const { status, target_provider_id } = req.body;
-
-    db.query('UPDATE referrals SET status = ? WHERE referral_id = ?', [status, referralId], (err) => {
-        if (err) return res.status(500).json(err);
-
-        if (status === 'Accepted') {
-            db.query('SELECT patient_id FROM referrals WHERE referral_id = ?', [referralId], (err2, results) => {
-                if (err2 || results.length === 0) return res.status(500).json(err2 || {error: "Referral not found"});
-                
-                const patientId = results[0].patient_id;
-                const apptQuery = `
-                    INSERT INTO appointments (patient_id, provider_id, referral_id, appointment_date, status)
-                    VALUES (?, ?, ?, CURDATE(), 'Scheduled')
-                `;
-                db.query(apptQuery, [patientId, target_provider_id, referralId], (err3) => {
-                    if (err3) return res.status(500).json(err3);
-                    res.json({ success: true, message: 'Referral accepted and appointment created.' });
-                });
-            });
-        } else {
-            res.json({ success: true, message: 'Referral rejected.' });
-        }
-    });
-});
-
-// ==========================================
-// V2 APIS fOR PATIENT RATINGS // ASHRAFUL
-// ==========================================
-
-// Get unrated and rated completed appointments for a patient
-app.get('/api/patient/:id/ratings-v2', (req, res) => {
-    const patientId = req.params.id;
-
-    const unratedQuery = `
-        SELECT a.appointment_id, a.appointment_date, p.name AS provider_name 
-        FROM appointments a
-        JOIN provider p ON a.provider_id = p.provider_id
-        WHERE a.patient_id = ? AND a.status = 'Completed' AND a.rating IS NULL
-    `;
-
-    const ratedQuery = `
-        SELECT a.appointment_id, a.appointment_date, a.rating, p.name AS provider_name 
-        FROM appointments a
-        JOIN provider p ON a.provider_id = p.provider_id
-        WHERE a.patient_id = ? AND a.rating IS NOT NULL
-    `;
-
-    db.query(unratedQuery, [patientId], (err, unrated) => {
-        if (err) return res.status(500).json(err);
-        
-        db.query(ratedQuery, [patientId], (err2, rated) => {
-            if (err2) return res.status(500).json(err2);
-            
-            res.json({ unrated, rated });
-        });
-    });
-});
-
-// Submit or update rating for an appointment
-app.put('/api/appointments-v2/:id/rating', (req, res) => {
-    const appointmentId = req.params.id;
-    const { rating } = req.body;
-
-    const updateQuery = `UPDATE appointments SET rating = ? WHERE appointment_id = ?`;
-    
-    db.query(updateQuery, [rating, appointmentId], (err, result) => {
-        if (err) return res.status(500).json(err);
-        res.json({ success: true, message: 'Rating saved successfully' });
-    });
-});
-
-// API: Scan directory and return all HTML files
-app.get('/api/pages-v2', (req, res) => {
-    const frontendDir = path.join(__dirname, '../frontend');
-    const pages = getHtmlFiles(frontendDir);
-    res.status(200).json(pages);
-});
 
 const PORT = 3000;
+
+// V2 // ASHRAFUL: moved all my apis to routes/v2-routes.js folder
+// imported below
+const v2Routes = require('./routes/v2-routes')(db, getHtmlFiles);
+app.use('/', v2Routes);
+
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
     // Run initial auto-escalation check on server startup

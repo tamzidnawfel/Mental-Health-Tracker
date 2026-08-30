@@ -1001,6 +1001,80 @@ ALTER TABLE `waitlist`
   ADD CONSTRAINT `fk_waitlist_provider` FOREIGN KEY (`provider_id`) REFERENCES `provider` (`provider_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
 
+--
+-- Triggers for automatic derivation of provider current_patients
+-- // ASHRAFUL: current_patient automatically updates when appointments table is updated
+-- // ASHRAFUL: making increment/decrement in backend redundant
+--
+
+DELIMITER $$
+
+CREATE TRIGGER update_provider_current_patients_after_insert
+AFTER INSERT ON APPOINTMENTS
+FOR EACH ROW
+BEGIN
+    IF NEW.provider_id IS NOT NULL THEN
+        UPDATE PROVIDER
+        SET current_patients = (
+            SELECT COUNT(*)
+            FROM APPOINTMENTS
+            WHERE provider_id = NEW.provider_id 
+              AND LOWER(status) IN ('confirmed', 'scheduled', 'active')
+        )
+        WHERE provider_id = NEW.provider_id;
+    END IF;
+END
+$$
+
+CREATE TRIGGER update_provider_current_patients_after_update
+AFTER UPDATE ON APPOINTMENTS
+FOR EACH ROW
+BEGIN
+    IF OLD.status <> NEW.status OR OLD.provider_id <> NEW.provider_id THEN
+        IF OLD.provider_id IS NOT NULL THEN
+            UPDATE PROVIDER
+            SET current_patients = (
+                SELECT COUNT(*)
+                FROM APPOINTMENTS
+                WHERE provider_id = OLD.provider_id 
+                  AND LOWER(status) IN ('confirmed', 'scheduled', 'active')
+            )
+            WHERE provider_id = OLD.provider_id;
+        END IF;
+
+        IF NEW.provider_id IS NOT NULL THEN
+            UPDATE PROVIDER
+            SET current_patients = (
+                SELECT COUNT(*)
+                FROM APPOINTMENTS
+                WHERE provider_id = NEW.provider_id 
+                  AND LOWER(status) IN ('confirmed', 'scheduled', 'active')
+            )
+            WHERE provider_id = NEW.provider_id;
+        END IF;
+    END IF;
+END
+$$
+
+CREATE TRIGGER update_provider_current_patients_after_delete
+AFTER DELETE ON APPOINTMENTS
+FOR EACH ROW
+BEGIN
+    IF OLD.provider_id IS NOT NULL THEN
+        UPDATE PROVIDER
+        SET current_patients = (
+            SELECT COUNT(*)
+            FROM APPOINTMENTS
+            WHERE provider_id = OLD.provider_id 
+              AND LOWER(status) IN ('confirmed', 'scheduled', 'active')
+        )
+        WHERE provider_id = OLD.provider_id;
+    END IF;
+END
+$$
+
+DELIMITER ;
+
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;

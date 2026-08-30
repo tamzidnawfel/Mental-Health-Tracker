@@ -133,13 +133,16 @@ function switchPane(tab) {
     const paneWaitlist = document.getElementById('paneWaitlist');
     const panePatientSearch = document.getElementById('panePatientSearch');
 
-    if (paneAppointments) paneAppointments.style.display = tab === 'appointments' ? 'block' : 'none';
+    // ASHRAFUL: COMMENTED OUT BECAUSE ITS HANDLED SEPARATELY
+    // if (paneAppointments) paneAppointments.style.display = tab === 'appointments' ? 'block' : 'none';
     if (paneWaitlist) paneWaitlist.style.display = tab === 'waitlist' ? 'block' : 'none';
     if (panePatientSearch) panePatientSearch.style.display = tab === 'patientSearch' ? 'block' : 'none';
 
-    if (tab === 'appointments') {
-        renderAppointmentsTable();
-    } else if (tab === 'waitlist') {
+    // ASHRAFUL: COMMENTED OUT BECAUSE ITS HANDLED SEPARATELY
+    // if (tab === 'appointments') {
+    //     renderAppointmentsTable();
+    // } else 
+    if (tab === 'waitlist') {
         renderWaitlistTable();
     }
 }
@@ -268,102 +271,103 @@ function renderActiveTab() {
 /**
  * Render Booked Appointments Table
  */
-function renderAppointmentsTable() {
-    const tbody = document.getElementById('appointmentsTableBody');
-    if (!tbody) return;
+// ASHRAFUL: COMMENTED OUT BECAUSE ITS HANDLED SEPARATELY
+// function renderAppointmentsTable() {
+//     const tbody = document.getElementById('appointmentsTableBody');
+//     if (!tbody) return;
 
-    let list = dashboardData.appointments || [];
+//     let list = dashboardData.appointments || [];
 
-    if (searchTerm) {
-        list = list.filter(a => {
-            const name = (a.patient_name || '').toLowerCase();
-            const phone = (a.patient_phone || '').toLowerCase();
-            const city = (a.patient_city || '').toLowerCase();
-            const id = String(a.appointment_id || '');
-            return name.includes(searchTerm) || phone.includes(searchTerm) || city.includes(searchTerm) || id.includes(searchTerm);
-        });
-    }
+//     if (searchTerm) {
+//         list = list.filter(a => {
+//             const name = (a.patient_name || '').toLowerCase();
+//             const phone = (a.patient_phone || '').toLowerCase();
+//             const city = (a.patient_city || '').toLowerCase();
+//             const id = String(a.appointment_id || '');
+//             return name.includes(searchTerm) || phone.includes(searchTerm) || city.includes(searchTerm) || id.includes(searchTerm);
+//         });
+//     }
 
-    if (list.length === 0) {
-        tbody.innerHTML = `
-            <tr>
-                <td colspan="8" class="empty-td">
-                    <div class="empty-icon">📅</div>
-                    <div style="font-size:15px; font-weight:700; color:#334155;">No Patient Bookings Found</div>
-                    <p style="font-size:12px; color:#64748b; margin-top:4px;">No appointments match your search filter or no bookings have been placed yet.</p>
-                </td>
-            </tr>
-        `;
-        return;
-    }
+//     if (list.length === 0) {
+//         tbody.innerHTML = `
+//             <tr>
+//                 <td colspan="8" class="empty-td">
+//                     <div class="empty-icon">📅</div>
+//                     <div style="font-size:15px; font-weight:700; color:#334155;">No Patient Bookings Found</div>
+//                     <p style="font-size:12px; color:#64748b; margin-top:4px;">No appointments match your search filter or no bookings have been placed yet.</p>
+//                 </td>
+//             </tr>
+//         `;
+//         return;
+//     }
 
-    let html = '';
-    list.forEach(a => {
-        const initial = (a.patient_name || 'P').charAt(0).toUpperCase();
-        const statusLower = (a.status || 'Confirmed').toLowerCase();
-        let statusClass = 'confirmed';
-        if (statusLower === 'completed') statusClass = 'completed';
-        else if (statusLower === 'cancelled') statusClass = 'cancelled';
+//     let html = '';
+//     list.forEach(a => {
+//         const initial = (a.patient_name || 'P').charAt(0).toUpperCase();
+//         const statusLower = (a.status || 'Confirmed').toLowerCase();
+//         let statusClass = 'confirmed';
+//         if (statusLower === 'completed') statusClass = 'completed';
+//         else if (statusLower === 'cancelled') statusClass = 'cancelled';
 
-        let actions = '';
-        if (statusLower === 'confirmed' || statusLower === 'scheduled' || statusLower === 'active') {
-            actions = `
-                <div style="display:flex; gap:6px;">
-                    <button type="button" class="btn-action-complete" onclick="markAppointmentCompleted(${a.appointment_id})">
-                        ✓ Complete &amp; Free Slot
-                    </button>
-                    <button type="button" class="btn-action-cancel" onclick="cancelAppointment(${a.appointment_id})">
-                        ✕ Cancel
-                    </button>
-                </div>
-            `;
-        } else {
-            actions = `<span style="font-size:12px; color:var(--text-muted); font-style:italic;">(${escapeHtml(a.status)})</span>`;
-        }
+//         let actions = '';
+//         if (statusLower === 'confirmed' || statusLower === 'scheduled' || statusLower === 'active') {
+//             actions = `
+//                 <div style="display:flex; gap:6px;">
+//                     <button type="button" class="btn-action-complete" onclick="markAppointmentCompleted(${a.appointment_id})">
+//                         ✓ Complete &amp; Free Slot
+//                     </button>
+//                     <button type="button" class="btn-action-cancel" onclick="cancelAppointment(${a.appointment_id})">
+//                         ✕ Cancel
+//                     </button>
+//                 </div>
+//             `;
+//         } else {
+//             actions = `<span style="font-size:12px; color:var(--text-muted); font-style:italic;">(${escapeHtml(a.status)})</span>`;
+//         }
 
-        html += `
-            <tr>
-                <td>
-                    <div class="patient-cell">
-                        <div class="patient-avatar">${initial}</div>
-                        <div class="patient-details">
-                            <span class="patient-name-text">${escapeHtml(a.patient_name)}</span>
-                            <span class="patient-id-sub">Patient #${a.patient_id} • Lang: ${escapeHtml(a.preferred_language || 'English')}</span>
-                        </div>
-                    </div>
-                </td>
-                <td>
-                    <div style="display:flex; flex-direction:column;">
-                        <span style="font-weight:600;">📞 ${escapeHtml(a.patient_phone || 'N/A')}</span>
-                        <span style="color:var(--text-muted); font-size:12px;">✉️ ${escapeHtml(a.patient_email || 'N/A')}</span>
-                    </div>
-                </td>
-                <td>
-                    <span>📍 ${escapeHtml(a.patient_city || 'Dhaka')}</span>
-                </td>
-                <td>
-                    <span style="font-weight:700; color:#065f46;">📅 ${a.appointment_date}</span>
-                </td>
-                <td>
-                    <span style="font-weight:700;">৳ ${parseFloat(currentProvider.session_fee || 1500).toLocaleString()}</span>
-                </td>
-                <td>
-                    <span class="status-pill ${statusClass}">${escapeHtml(a.status)}</span>
-                </td>
-                <td>
-                    <button type="button" class="btn-action-history" onclick="openPatientHistoryModal(${a.patient_id})">
-                        <span>📋 View History</span>
-                    </button>
-                </td>
-                <td>
-                    ${actions}
-                </td>
-            </tr>
-        `;
-    });
+//         html += `
+//             <tr>
+//                 <td>
+//                     <div class="patient-cell">
+//                         <div class="patient-avatar">${initial}</div>
+//                         <div class="patient-details">
+//                             <span class="patient-name-text">${escapeHtml(a.patient_name)}</span>
+//                             <span class="patient-id-sub">Patient #${a.patient_id} • Lang: ${escapeHtml(a.preferred_language || 'English')}</span>
+//                         </div>
+//                     </div>
+//                 </td>
+//                 <td>
+//                     <div style="display:flex; flex-direction:column;">
+//                         <span style="font-weight:600;">📞 ${escapeHtml(a.patient_phone || 'N/A')}</span>
+//                         <span style="color:var(--text-muted); font-size:12px;">✉️ ${escapeHtml(a.patient_email || 'N/A')}</span>
+//                     </div>
+//                 </td>
+//                 <td>
+//                     <span>📍 ${escapeHtml(a.patient_city || 'Dhaka')}</span>
+//                 </td>
+//                 <td>
+//                     <span style="font-weight:700; color:#065f46;">📅 ${a.appointment_date}</span>
+//                 </td>
+//                 <td>
+//                     <span style="font-weight:700;">৳ ${parseFloat(currentProvider.session_fee || 1500).toLocaleString()}</span>
+//                 </td>
+//                 <td>
+//                     <span class="status-pill ${statusClass}">${escapeHtml(a.status)}</span>
+//                 </td>
+//                 <td>
+//                     <button type="button" class="btn-action-history" onclick="openPatientHistoryModal(${a.patient_id})">
+//                         <span>📋 View History</span>
+//                     </button>
+//                 </td>
+//                 <td>
+//                     ${actions}
+//                 </td>
+//             </tr>
+//         `;
+//     });
 
-    tbody.innerHTML = html;
-}
+//     tbody.innerHTML = html;
+// }
 
 /**
  * Render Waitlist Table (Patient Queue for this Provider)
