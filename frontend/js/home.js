@@ -9,18 +9,69 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Load district leaderboard for the logged-in patient
     loadDistrictLeaderboard();
 
-    // 3. Initialize Mood Tracker
+    // 3. Load care access snapshot for the patient’s district
+    loadPatientAccessInsights();
+
+    // 4. Initialize Mood Tracker
     initMoodTracker();
 
-    // 4. Initialize 4-7-8 Guided Breathing Exercise
+    // 5. Initialize 4-7-8 Guided Breathing Exercise
     initBreathingTool();
 
-    // 5. Initialize Affirmation Generator
+    // 6. Initialize Affirmation Generator
     initAffirmations();
 
-    // 6. Initialize Quick Appointment Booking
+    // 7. Initialize Quick Appointment Booking
     initAppointmentBooking();
 });
+
+async function loadPatientAccessInsights() {
+    const storedPatientStr = sessionStorage.getItem('currentPatient') || localStorage.getItem('currentPatient');
+    const districtEl = document.getElementById('careInsightDistrict');
+    const zoneEl = document.getElementById('careInsightZone');
+    const providersEl = document.getElementById('careInsightProviders');
+    const populationEl = document.getElementById('careInsightPopulation');
+    const insuranceEl = document.getElementById('careInsightInsurance');
+    const ratingEl = document.getElementById('careInsightRating');
+    const summaryEl = document.getElementById('careInsightSummary');
+
+    if (!storedPatientStr || !districtEl) {
+        return;
+    }
+
+    let currentPatient = {};
+    try {
+        currentPatient = JSON.parse(storedPatientStr);
+    } catch (error) {
+        console.error('Error parsing patient for insights:', error);
+        return;
+    }
+
+    if (!currentPatient.patient_id) {
+        if (summaryEl) summaryEl.textContent = 'Please log in to view your district care overview.';
+        return;
+    }
+
+    try {
+        const response = await fetch(`http://localhost:3000/api/patient-home/insights?patient_id=${currentPatient.patient_id}`);
+        if (!response.ok) {
+            throw new Error('Insights request failed');
+        }
+
+        const data = await response.json();
+
+        if (districtEl) districtEl.textContent = data.district_name || 'Your district';
+        if (zoneEl) zoneEl.textContent = data.zone_flag || 'NO DATA';
+        if (providersEl) providersEl.textContent = Number(data.total_providers || 0).toLocaleString();
+        if (populationEl) populationEl.textContent = Number(data.population || 0).toLocaleString();
+        if (insuranceEl) insuranceEl.textContent = Number(data.insured_providers || 0).toLocaleString();
+        if (ratingEl) ratingEl.textContent = Number(data.avg_rating || 0).toFixed(1);
+        if (summaryEl) summaryEl.textContent = data.summary || 'No district data available.';
+    } catch (error) {
+        console.error('Patient insights error:', error);
+        if (summaryEl) summaryEl.textContent = 'Unable to load local care access data right now.';
+    }
+}
 
 async function loadDistrictLeaderboard() {
     const storedPatientStr = sessionStorage.getItem('currentPatient') || localStorage.getItem('currentPatient');
