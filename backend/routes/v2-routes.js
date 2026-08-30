@@ -28,9 +28,11 @@ module.exports = function (db, getHtmlFiles) {
             p.phone AS patient_phone, 
             p.email AS patient_email, 
             p.city AS patient_city, 
-            p.preferred_language
+            p.preferred_language,
+            pr.session_fee
         FROM APPOINTMENTS a
         JOIN PATIENT p ON a.patient_id = p.patient_id
+        JOIN PROVIDER pr ON a.provider_id = pr.provider_id
         WHERE a.provider_id = ?
         ORDER BY a.appointment_date DESC
     `;
@@ -42,7 +44,6 @@ module.exports = function (db, getHtmlFiles) {
             res.json(results);
         });
     });
-
     // 2. Complete appointment V2
     router.put('/api/appointments-v2/:id/complete', (req, res) => {
         const appointmentId = req.params.id;
