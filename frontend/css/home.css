@@ -912,6 +912,137 @@ body {
     background: var(--warm-light);
 }
 
+.district-leaderboard-section {
+    padding: 1rem 1.5rem 0;
+    background: var(--bg-page);
+}
+
+.leaderboard-header {
+    margin-bottom: 1.5rem;
+}
+
+.district-leaderboard-card {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    border-radius: 22px;
+    box-shadow: var(--shadow-sm);
+    padding: 1.4rem 1.5rem;
+}
+
+.leaderboard-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.leaderboard-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.leaderboard-eyebrow {
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--text-muted);
+}
+
+.leaderboard-heading h3 {
+    font-family: var(--font-heading);
+    font-size: 1.55rem;
+    color: var(--text-main);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+}
+
+.district-chip {
+    background: #ECFDF5;
+    color: #166534;
+    border: 1px solid #BBF7D0;
+    border-radius: var(--radius-full);
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.leaderboard-list {
+    display: grid;
+    gap: 0.8rem;
+}
+
+.leaderboard-item {
+    display: grid;
+    grid-template-columns: 52px 1fr auto;
+    align-items: center;
+    gap: 0.8rem;
+    background: var(--bg-page);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 0.85rem 0.95rem;
+}
+
+.rank-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    color: #FFFFFF;
+    font-weight: 800;
+    font-size: 0.82rem;
+}
+
+.leaderboard-main {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+}
+
+.provider-name {
+    font-weight: 700;
+    color: var(--text-main);
+}
+
+.provider-meta {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.rating-score {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.1rem;
+    font-weight: 800;
+    color: var(--text-main);
+}
+
+.rating-score span {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.loading-state,
+.empty-state {
+    background: var(--bg-page);
+    border: 1px dashed var(--border-color);
+    color: var(--text-muted);
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    text-align: center;
+    font-size: 0.9rem;
+}
+
 /* ==========================================================================
    FEATURED DOCTORS & THERAPISTS
    ========================================================================== */

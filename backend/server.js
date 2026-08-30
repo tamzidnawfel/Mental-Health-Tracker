@@ -937,6 +937,79 @@ app.get('/api/patients', (req, res) => {
     });
 });
 
+// District leaderboard for patient home page
+app.get('/api/patient-home/leaderboard', (req, res) => {
+    const patientId = parseInt(req.query.patient_id, 10);
+
+    if (!patientId) {
+        return res.status(400).json({ error: 'patient_id is required' });
+    }
+
+    const patientSql = `
+        SELECT p.patient_id, p.district_id, r.district_name
+        FROM PATIENT p
+        LEFT JOIN REGION r ON p.district_id = r.district_id
+        WHERE p.patient_id = ?
+    `;
+
+    db.query(patientSql, [patientId], (patientErr, patientRows) => {
+        if (patientErr) {
+            console.error('Patient lookup error:', patientErr);
+            return res.status(500).json({ error: 'Failed to load patient district.' });
+        }
+
+        if (!patientRows || patientRows.length === 0) {
+            return res.status(404).json({ error: 'Patient not found.' });
+        }
+
+        const patient = patientRows[0];
+        const districtId = patient.district_id;
+
+        if (!districtId) {
+            return res.status(200).json({
+                district_name: patient.district_name || 'Unassigned',
+                providers: []
+            });
+        }
+
+        const leaderboardSql = `
+            SELECT
+                p.provider_id,
+                p.name,
+                p.session_fee,
+                p.rating_avg,
+                p.accepts_insurance,
+                r.district_name
+            FROM PROVIDER p
+            LEFT JOIN REGION r ON p.district_id = r.district_id
+            WHERE p.district_id = ?
+              AND p.rating_avg IS NOT NULL
+            ORDER BY p.rating_avg DESC, p.name ASC
+            LIMIT 5
+        `;
+
+        db.query(leaderboardSql, [districtId], (leaderboardErr, providerRows) => {
+            if (leaderboardErr) {
+                console.error('Leaderboard query error:', leaderboardErr);
+                return res.status(500).json({ error: 'Failed to load district leaderboard.' });
+            }
+
+            return res.status(200).json({
+                district_name: patient.district_name || 'Your district',
+                providers: (providerRows || []).map((provider, index) => ({
+                    rank: index + 1,
+                    provider_id: provider.provider_id,
+                    name: provider.name,
+                    rating_avg: Number(provider.rating_avg || 0),
+                    session_fee: Number(provider.session_fee || 0),
+                    accepts_insurance: Boolean(provider.accepts_insurance),
+                    district_name: provider.district_name || 'District not recorded'
+                }))
+            });
+        });
+    });
+});
+
 // Fetch specializations
 app.get('/api/specializations', (req, res) => {
     const sql = 'SELECT spec_id, spec_name FROM SPECIALIZATION ORDER BY spec_id ASC';

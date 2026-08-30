@@ -6,18 +6,96 @@ document.addEventListener('DOMContentLoaded', () => {
     // 1. Initialize Patient Session & Greeting
     initPatientSession();
 
-    // 2. Initialize Mood Tracker
+    // 2. Load district leaderboard for the logged-in patient
+    loadDistrictLeaderboard();
+
+    // 3. Initialize Mood Tracker
     initMoodTracker();
 
-    // 3. Initialize 4-7-8 Guided Breathing Exercise
+    // 4. Initialize 4-7-8 Guided Breathing Exercise
     initBreathingTool();
 
-    // 4. Initialize Affirmation Generator
+    // 5. Initialize Affirmation Generator
     initAffirmations();
 
-    // 5. Initialize Quick Appointment Booking
+    // 6. Initialize Quick Appointment Booking
     initAppointmentBooking();
 });
+
+async function loadDistrictLeaderboard() {
+    const storedPatientStr = sessionStorage.getItem('currentPatient') || localStorage.getItem('currentPatient');
+    const leaderboardList = document.getElementById('districtLeaderboardList');
+    const districtLabel = document.getElementById('districtLeaderboardLabel');
+
+    if (!leaderboardList || !storedPatientStr) {
+        if (leaderboardList) {
+            leaderboardList.innerHTML = '<div class="empty-state">Please log in to view district rankings.</div>';
+        }
+        if (districtLabel) districtLabel.textContent = 'Your district';
+        return;
+    }
+
+    let currentPatient = {};
+    try {
+        currentPatient = JSON.parse(storedPatientStr);
+    } catch (error) {
+        console.error('Error parsing current patient:', error);
+        if (leaderboardList) {
+            leaderboardList.innerHTML = '<div class="empty-state">Unable to load district rankings.</div>';
+        }
+        return;
+    }
+
+    if (!currentPatient.patient_id) {
+        if (leaderboardList) {
+            leaderboardList.innerHTML = '<div class="empty-state">Please log in to view district rankings.</div>';
+        }
+        if (districtLabel) districtLabel.textContent = 'Your district';
+        return;
+    }
+
+    leaderboardList.innerHTML = '<div class="loading-state">Loading district providers...</div>';
+
+    try {
+        const response = await fetch(`http://localhost:3000/api/patient-home/leaderboard?patient_id=${currentPatient.patient_id}`);
+
+        if (!response.ok) {
+            throw new Error('Leaderboard request failed');
+        }
+
+        const data = await response.json();
+
+        if (districtLabel) {
+            districtLabel.textContent = data.district_name || 'Your district';
+        }
+
+        if (!data.providers || data.providers.length === 0) {
+            leaderboardList.innerHTML = '<div class="empty-state">No rated providers in this district yet.</div>';
+            return;
+        }
+
+        leaderboardList.innerHTML = data.providers.map((provider) => `
+            <div class="leaderboard-item">
+                <div class="rank-badge">#${provider.rank}</div>
+
+                <div class="leaderboard-main">
+                    <div class="provider-name">${provider.name}</div>
+                    <div class="provider-meta">
+                        ${provider.accepts_insurance ? 'Insurance accepted' : 'Self-pay'} • ৳ ${Number(provider.session_fee || 0).toLocaleString()}
+                    </div>
+                </div>
+
+                <div class="rating-score">
+                    ${Number(provider.rating_avg || 0).toFixed(1)}
+                    <span>rating</span>
+                </div>
+            </div>
+        `).join('');
+    } catch (error) {
+        console.error('Leaderboard error:', error);
+        leaderboardList.innerHTML = '<div class="empty-state">Unable to load leaderboard right now.</div>';
+    }
+}
 
 /**
  * 1. Patient Session Handler
