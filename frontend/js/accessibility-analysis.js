@@ -1,11 +1,15 @@
 document.addEventListener('DOMContentLoaded', loadAnalysis);
 
 async function loadAnalysis() {
-    const provider = getProvider();
-    document.getElementById('providerName').textContent = provider.name || 'Provider Workspace';
+    const patient = getPatient();
+    if (!patient || !patient.patient_id) {
+        document.getElementById('analysisBody').innerHTML = '<tr><td colspan="8" class="empty-td"><div class="empty-icon">!</div><strong>Please log in</strong><p>Sign in as a patient to view your district accessibility analysis.</p></td></tr>';
+        return;
+    }
+
     try {
         const [response, regionsResponse] = await Promise.all([
-            fetch(`http://localhost:3000/api/provider/${provider.provider_id}/accessibility-analysis`),
+            fetch(`http://localhost:3000/api/patient-home/accessibility-analysis?patient_id=${patient.patient_id}`),
             fetch('http://localhost:3000/api/regions')
         ]);
         if (!response.ok || !regionsResponse.ok) throw new Error('Could not load accessibility analysis');
@@ -61,5 +65,11 @@ function renderTable(patients) {
     if (!patients.length) { body.innerHTML = '<tr><td colspan="8" class="empty-td"><strong>No patient recorded</strong><p>No patient is recorded for the selected district.</p></td></tr>'; return; }
     body.innerHTML = patients.map(patient => `<tr><td><strong>${escapeHtml(patient.patient_name)}</strong><small>Patient #${patient.patient_id}</small></td><td>${escapeHtml(patient.district_name)}</td><td>${escapeHtml(patient.income_bracket)}</td><td>${escapeHtml(patient.provider_name)}</td><td>${patient.distance_km === null ? 'Unavailable' : `${patient.distance_km.toFixed(2)} km`}</td><td><span class="boolean-pill ${patient.distance_barrier === true ? 'yes' : 'no'}">${patient.distance_barrier === null ? 'Unavailable' : patient.distance_barrier ? 'YES' : 'NO'}</span></td><td>${escapeHtml(patient.financial_barrier)}</td><td><span class="classification-pill">${escapeHtml(patient.overall_classification)}</span></td></tr>`).join('');
 }
-function getProvider() { try { return JSON.parse(sessionStorage.getItem('currentProvider') || localStorage.getItem('currentProvider')) || { provider_id: 1, name: 'Dr. Sarah Smith' }; } catch { return { provider_id: 1, name: 'Dr. Sarah Smith' }; } }
+function getPatient() {
+    try {
+        return JSON.parse(sessionStorage.getItem('currentPatient') || localStorage.getItem('currentPatient')) || null;
+    } catch {
+        return null;
+    }
+}
 function escapeHtml(value) { return String(value ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[character])); }

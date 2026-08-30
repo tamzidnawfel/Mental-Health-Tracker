@@ -921,6 +921,12 @@ body {
     margin-bottom: 1.5rem;
 }
 
+.patient-insights-section {
+    padding: 1.5rem 1.5rem 0;
+    background: var(--bg-page);
+}
+
+.patient-insights-card,
 .district-leaderboard-card {
     max-width: 1200px;
     margin: 0 auto;
@@ -1030,6 +1036,100 @@ body {
     font-size: 0.75rem;
     color: var(--text-muted);
     font-weight: 600;
+}
+
+.insight-header-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.insight-header-row h3 {
+    font-family: var(--font-heading);
+    font-size: 1.55rem;
+    color: var(--text-main);
+    font-weight: 700;
+    letter-spacing: -0.04em;
+}
+
+.zone-chip {
+    background: #ECFDF5;
+    color: #166534;
+    border: 1px solid #BBF7D0;
+    border-radius: var(--radius-full);
+    padding: 0.45rem 0.85rem;
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.insight-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.insight-stat {
+    background: var(--bg-page);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.insight-label {
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-weight: 700;
+}
+
+.insight-stat strong {
+    color: var(--text-main);
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+
+.insight-summary {
+    background: #F8FAFC;
+    border: 1px dashed var(--border-color);
+    border-radius: 14px;
+    padding: 1rem 1.2rem;
+    color: var(--text-muted);
+    line-height: 1.6;
+}
+
+.care-insight-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.care-insight-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    background: #FFFFFF;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+    border-radius: var(--radius-full);
+    padding: 0.7rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    transition: all 0.2s ease;
+}
+
+.care-insight-link:hover {
+    background: #F8FAFC;
+    border-color: #CBD5E1;
 }
 
 .loading-state,

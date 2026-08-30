@@ -664,42 +664,6 @@ app.get('/api/provider/:id/dashboard', (req, res) => {
     });
 });
 
-app.get('/api/provider/:id/cancelled-patients', (req, res) => {
-    const providerId = parseInt(req.params.id, 10);
-    if (!providerId || isNaN(providerId)) {
-        return res.status(400).json({ error: 'Invalid provider ID.' });
-    }
-
-    const sql = `
-        SELECT
-            a.appointment_id,
-            a.patient_id,
-            p.name AS patient_name,
-            r.district_name,
-            DATE_FORMAT(a.appointment_date, '%Y-%m-%d') AS appointment_date,
-            NULL AS cancellation_date,
-            NULL AS cancellation_reason,
-            pr.provider_id,
-            pr.name AS provider_name,
-            pr.session_fee,
-            a.status
-        FROM APPOINTMENTS a
-        JOIN PATIENT p ON a.patient_id = p.patient_id
-        JOIN PROVIDER pr ON a.provider_id = pr.provider_id
-        LEFT JOIN REGION r ON p.district_id = r.district_id
-        WHERE a.provider_id = ? AND LOWER(a.status) = 'cancelled'
-        ORDER BY a.appointment_date DESC, a.appointment_id DESC
-    `;
-
-    db.query(sql, [providerId], (err, rows) => {
-        if (err) {
-            console.error('Error fetching cancelled patients:', err);
-            return res.status(500).json({ error: 'Failed to load cancelled patients.' });
-        }
-        res.json({ provider_id: providerId, patients: rows || [], cancellation_metadata_available: false });
-    });
-});
-
 // Deterministic financial and geographic accessibility analysis for one provider.
 app.get('/api/provider/:id/accessibility-analysis', (req, res) => {
     const providerId = parseInt(req.params.id, 10);
@@ -1005,6 +969,219 @@ app.get('/api/patient-home/leaderboard', (req, res) => {
                     accepts_insurance: Boolean(provider.accepts_insurance),
                     district_name: provider.district_name || 'District not recorded'
                 }))
+            });
+        });
+    });
+});
+
+app.get('/api/patient-home/insights', (req, res) => {
+    const patientId = parseInt(req.query.patient_id, 10);
+
+    if (!patientId) {
+        return res.status(400).json({ error: 'patient_id is required' });
+    }
+
+    const patientSql = `
+        SELECT p.patient_id, p.district_id, r.district_name, r.population
+        FROM PATIENT p
+        LEFT JOIN REGION r ON p.district_id = r.district_id
+        WHERE p.patient_id = ?
+    `;
+
+    db.query(patientSql, [patientId], (patientErr, patientRows) => {
+        if (patientErr) {
+            console.error('Patient insights lookup error:', patientErr);
+            return res.status(500).json({ error: 'Failed to load patient care insights.' });
+        }
+
+        if (!patientRows || patientRows.length === 0) {
+            return res.status(404).json({ error: 'Patient not found.' });
+        }
+
+        const patient = patientRows[0];
+        const districtId = patient.district_id;
+
+        if (!districtId) {
+            return res.status(200).json({
+                district_name: patient.district_name || 'Unassigned',
+                population: 0,
+                total_providers: 0,
+                insured_providers: 0,
+                avg_rating: 0,
+                population_per_provider: 0,
+                zone_flag: 'NO DATA',
+                summary: 'No district assigned yet.'
+            });
+        }
+
+        const insightsSql = `
+            SELECT
+                r.district_name,
+                r.population,
+                COUNT(p.provider_id) AS total_providers,
+                SUM(CASE WHEN p.accepts_insurance = 1 THEN 1 ELSE 0 END) AS insured_providers,
+                ROUND(AVG(p.rating_avg), 2) AS avg_rating
+            FROM REGION r
+            LEFT JOIN PROVIDER p ON p.district_id = r.district_id
+            WHERE r.district_id = ?
+            GROUP BY r.district_id, r.district_name, r.population
+        `;
+
+        db.query(insightsSql, [districtId], (insightsErr, insightsRows) => {
+            if (insightsErr) {
+                console.error('District insights error:', insightsErr);
+                return res.status(500).json({ error: 'Failed to load district care insights.' });
+            }
+
+            const row = (insightsRows && insightsRows[0]) || {
+                district_name: patient.district_name || 'District',
+                population: patient.population || 0,
+                total_providers: 0,
+                insured_providers: 0,
+                avg_rating: 0
+            };
+
+            const population = Number(row.population || 0);
+            const providerCount = Number(row.total_providers || 0);
+            const insuredProviders = Number(row.insured_providers || 0);
+            const avgRating = Number(row.avg_rating || 0);
+            const populationPerProvider = providerCount > 0 ? Math.round(population / providerCount) : population;
+
+            let zoneFlag = 'GREEN';
+            if (providerCount === 0 || populationPerProvider > 500000) {
+                zoneFlag = 'RED';
+            } else if (populationPerProvider > 250000) {
+                zoneFlag = 'YELLOW';
+            }
+
+            const summary = providerCount === 0
+                ? 'No providers are currently assigned to this district.'
+                : populationPerProvider > 500000
+                    ? 'This district may need more local care coverage.'
+                    : populationPerProvider > 250000
+                        ? 'This district is moderately served but still needs support.'
+                        : 'This district has relatively strong provider access.';
+
+            return res.status(200).json({
+                district_name: row.district_name || patient.district_name || 'District',
+                population,
+                total_providers: providerCount,
+                insured_providers: insuredProviders,
+                avg_rating: avgRating,
+                population_per_provider: populationPerProvider,
+                zone_flag: zoneFlag,
+                summary
+            });
+        });
+    });
+});
+
+app.get('/api/patient-home/accessibility-analysis', (req, res) => {
+    const patientId = parseInt(req.query.patient_id, 10);
+    if (!patientId) {
+        return res.status(400).json({ error: 'patient_id is required' });
+    }
+
+    const patientSql = `
+        SELECT p.patient_id, p.name AS patient_name, p.income_bracket, p.district_id, p.latitude AS patient_latitude, p.longitude AS patient_longitude, r.district_name
+        FROM PATIENT p
+        LEFT JOIN REGION r ON p.district_id = r.district_id
+        WHERE p.patient_id = ?
+    `;
+
+    db.query(patientSql, [patientId], (patientErr, patientRows) => {
+        if (patientErr) {
+            console.error('Patient accessibility lookup error:', patientErr);
+            return res.status(500).json({ error: 'Failed to load patient accessibility analysis.' });
+        }
+
+        if (!patientRows || patientRows.length === 0) {
+            return res.status(404).json({ error: 'Patient not found.' });
+        }
+
+        const patient = patientRows[0];
+        const districtId = patient.district_id;
+
+        if (!districtId) {
+            return res.status(200).json({
+                district_name: patient.district_name || 'Unassigned',
+                config: ACCESSIBILITY_CONFIG,
+                patients: []
+            });
+        }
+
+        const districtPatientsSql = `
+            SELECT p.patient_id, p.name AS patient_name, p.income_bracket, p.latitude AS patient_latitude, p.longitude AS patient_longitude, r.district_name
+            FROM PATIENT p
+            LEFT JOIN REGION r ON p.district_id = r.district_id
+            WHERE p.district_id = ?
+            ORDER BY p.name ASC
+        `;
+
+        db.query(districtPatientsSql, [districtId], (districtErr, districtRows) => {
+            if (districtErr) {
+                console.error('District patient accessibility error:', districtErr);
+                return res.status(500).json({ error: 'Failed to load district accessibility analysis.' });
+            }
+
+            const providerSql = `
+                SELECT provider_id, name AS provider_name, latitude AS provider_latitude, longitude AS provider_longitude, session_fee
+                FROM PROVIDER
+                WHERE district_id = ?
+                ORDER BY name ASC
+            `;
+
+            db.query(providerSql, [districtId], (providerErr, providerRows) => {
+                if (providerErr) {
+                    console.error('District provider lookup error:', providerErr);
+                    return res.status(500).json({ error: 'Failed to load district providers.' });
+                }
+
+                const providers = providerRows || [];
+                const patients = (districtRows || []).map(row => {
+                    const provider = providers
+                        .filter(candidate => candidate.provider_latitude !== null && candidate.provider_longitude !== null && candidate.provider_latitude !== undefined && candidate.provider_longitude !== undefined)
+                        .map(candidate => {
+                            const hasCoordinates = [row.patient_latitude, row.patient_longitude, candidate.provider_latitude, candidate.provider_longitude]
+                                .every(value => value !== null && value !== undefined && Number.isFinite(Number(value)));
+                            const distanceKm = hasCoordinates
+                                ? Number(haversineDistanceKm(Number(row.patient_latitude), Number(row.patient_longitude), Number(candidate.provider_latitude), Number(candidate.provider_longitude)).toFixed(2))
+                                : null;
+                            return { ...candidate, distanceKm };
+                        })
+                        .sort((a, b) => (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER))[0];
+
+                    const normalizedIncomeBracket = normalizeIncomeBracket(row.income_bracket);
+                    const financialBarrier = normalizedIncomeBracket
+                        ? ACCESSIBILITY_CONFIG.financialBarrierByBracket[normalizedIncomeBracket]
+                        : null;
+                    const distanceKm = provider ? provider.distanceKm : null;
+                    const distanceBarrier = distanceKm === null ? null : distanceKm > ACCESSIBILITY_CONFIG.distanceBarrierKm;
+                    const overallClassification = financialBarrier && distanceBarrier !== null
+                        ? accessibilityClassification(financialBarrier, distanceBarrier)
+                        : 'Insufficient Data';
+
+                    return {
+                        patient_id: row.patient_id,
+                        patient_name: row.patient_name,
+                        district_name: row.district_name || 'District not recorded',
+                        income_bracket: normalizedIncomeBracket || row.income_bracket || 'Not recorded',
+                        provider_id: provider ? provider.provider_id : null,
+                        provider_name: provider ? provider.provider_name : 'No local provider',
+                        distance_km: distanceKm,
+                        distance_barrier: distanceBarrier,
+                        financial_barrier: financialBarrier || 'Not classified',
+                        session_fee: provider ? provider.session_fee : null,
+                        overall_classification: overallClassification,
+                        severity: accessibilitySeverity(overallClassification)
+                    };
+                }).sort((first, second) => second.severity - first.severity || first.patient_name.localeCompare(second.patient_name));
+
+                return res.status(200).json({
+                    district_name: patient.district_name || 'District',
+                    config: ACCESSIBILITY_CONFIG,
+                    patients
+                });
             });
         });
     });
