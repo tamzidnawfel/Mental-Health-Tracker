@@ -34,17 +34,27 @@ async function loadAnalysis() {
     }
 }
 function renderAnalysisView(patients) {
-    const financialBarriers = patients.filter(patient => ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier));
+    const uniquePatientIds = new Set(patients.map(patient => patient.patient_id));
+    const financialBarriers = new Set(patients.filter(patient => ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier)).map(patient => patient.patient_id));
     const distanceBarriers = patients.filter(patient => patient.distance_barrier === true);
     const summary = {
-        total_patients: patients.length,
-        financial_barriers: financialBarriers.length,
+        total_patients: uniquePatientIds.size,
+        financial_barriers: financialBarriers.size,
         distance_barriers: distanceBarriers.length,
-        both_barriers: patients.filter(patient => patient.distance_barrier === true && financialBarriers.includes(patient)).length,
-        no_major_barriers: patients.filter(patient => patient.overall_classification === 'No Major Barrier').length
+        both_barriers: patients.filter(patient => patient.distance_barrier === true && ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier)).length
     };
     const incomeBrackets = ['10–30k', '30–50k', '50k+'];
-    const incomeChart = incomeBrackets.map(bracket => ({ bracket, count: patients.filter(patient => patient.income_bracket === bracket).length }));
+    const uniquePatientsByIncomeBracket = new Map();
+    patients.forEach(patient => {
+        if (patient.patient_id === null || patient.patient_id === undefined) return;
+        if (!uniquePatientsByIncomeBracket.has(patient.patient_id)) {
+            uniquePatientsByIncomeBracket.set(patient.patient_id, patient.income_bracket);
+        }
+    });
+    const incomeChart = incomeBrackets.map(bracket => ({
+        bracket,
+        count: [...uniquePatientsByIncomeBracket.values()].filter(value => value === bracket).length
+    }));
     const classifications = [...new Set(patients.map(patient => patient.overall_classification))].map(classification => ({ classification, count: patients.filter(patient => patient.overall_classification === classification).length }));
     renderSummary(summary);
     renderChart('incomeChart', incomeChart.map(item => ({ label: item.bracket, count: item.count })));
@@ -53,7 +63,7 @@ function renderAnalysisView(patients) {
     renderTable(patients);
 }
 function renderSummary(summary) {
-    const cards = [['Total patients', summary.total_patients, 'blue-bg'], ['Financial barriers', summary.financial_barriers, 'amber-bg'], ['Distance barriers', summary.distance_barriers, 'red-bg'], ['Both barriers', summary.both_barriers, 'purple-bg'], ['No major barriers', summary.no_major_barriers, 'green-bg']];
+    const cards = [['Total patients', summary.total_patients, 'blue-bg'], ['Financial barriers', summary.financial_barriers, 'amber-bg'], ['Distance barriers', summary.distance_barriers, 'red-bg'], ['Both barriers', summary.both_barriers, 'purple-bg']];
     document.getElementById('summaryCards').innerHTML = cards.map(card => `<div class="metric-card"><div class="metric-icon-wrap ${card[2]}">●</div><div class="metric-info"><span class="metric-label">${card[0]}</span><div class="metric-val">${card[1]}</div></div></div>`).join('');
 }
 function renderChart(elementId, items) {
@@ -62,8 +72,8 @@ function renderChart(elementId, items) {
 }
 function renderTable(patients) {
     const body = document.getElementById('analysisBody');
-    if (!patients.length) { body.innerHTML = '<tr><td colspan="8" class="empty-td"><strong>No patient recorded</strong><p>No patient is recorded for the selected district.</p></td></tr>'; return; }
-    body.innerHTML = patients.map(patient => `<tr><td><strong>${escapeHtml(patient.patient_name)}</strong><small>Patient #${patient.patient_id}</small></td><td>${escapeHtml(patient.district_name)}</td><td>${escapeHtml(patient.income_bracket)}</td><td>${escapeHtml(patient.provider_name)}</td><td>${patient.distance_km === null ? 'Unavailable' : `${patient.distance_km.toFixed(2)} km`}</td><td><span class="boolean-pill ${patient.distance_barrier === true ? 'yes' : 'no'}">${patient.distance_barrier === null ? 'Unavailable' : patient.distance_barrier ? 'YES' : 'NO'}</span></td><td>${escapeHtml(patient.financial_barrier)}</td><td><span class="classification-pill">${escapeHtml(patient.overall_classification)}</span></td></tr>`).join('');
+    if (!patients.length) { body.innerHTML = '<tr><td colspan="9" class="empty-td"><strong>No patient recorded</strong><p>No patient is recorded for the selected district.</p></td></tr>'; return; }
+    body.innerHTML = patients.map(patient => `<tr><td><strong>#${escapeHtml(patient.appointment_id ?? patient.patient_id)}</strong><small>Appointment</small></td><td><strong>${escapeHtml(patient.patient_name)}</strong><small>Patient #${patient.patient_id}</small></td><td>${escapeHtml(patient.district_name)}</td><td>${escapeHtml(patient.income_bracket)}</td><td>${escapeHtml(patient.provider_name)}</td><td>${patient.distance_km === null ? 'Unavailable' : `${patient.distance_km.toFixed(2)} km`}</td><td><span class="boolean-pill ${patient.distance_barrier === true ? 'yes' : 'no'}">${patient.distance_barrier === null ? 'Unavailable' : patient.distance_barrier ? 'YES' : 'NO'}</span></td><td>${escapeHtml(patient.financial_barrier)}</td><td><span class="classification-pill">${escapeHtml(patient.overall_classification)}</span></td></tr>`).join('');
 }
 function getPatient() {
     try {

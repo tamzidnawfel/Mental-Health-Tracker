@@ -99,11 +99,11 @@ document.addEventListener('DOMContentLoaded', () => {
             console.warn('Backend offline or query error, using seed subdistrict data:', err);
             // Fallback seed subdistricts
             subzoneData = [
-                { subregion_id: 1, subdistrict_name: 'Mirpur', district_id: 1, district_name: 'Dhaka', population: 546026, total_providers: 12, population_per_provider: 45502, zone_flag: 'GREEN' },
-                { subregion_id: 2, subdistrict_name: 'Mohammadpur', district_id: 1, district_name: 'Dhaka', population: 527560, total_providers: 1, population_per_provider: 527560, zone_flag: 'RED' },
-                { subregion_id: 3, subdistrict_name: 'Uttara', district_id: 1, district_name: 'Dhaka', population: 180510, total_providers: 0, population_per_provider: 180510, zone_flag: 'RED' },
-                { subregion_id: 4, subdistrict_name: 'Demra', district_id: 1, district_name: 'Dhaka', population: 278830, total_providers: 0, population_per_provider: 278830, zone_flag: 'RED' },
-                { subregion_id: 5, subdistrict_name: 'Kamrangirchar', district_id: 1, district_name: 'Dhaka', population: 372287, total_providers: 0, population_per_provider: 372287, zone_flag: 'RED' }
+                { subregion_id: 1, subdistrict_name: 'Mirpur', district_id: 1, district_name: 'Dhaka', population: 546026, total_providers: 3, population_per_provider: 182008, zone_flag: 'GREEN' },
+                { subregion_id: 2, subdistrict_name: 'Mohammadpur', district_id: 1, district_name: 'Dhaka', population: 527560, total_providers: 3, population_per_provider: 175853, zone_flag: 'GREEN' },
+                { subregion_id: 3, subdistrict_name: 'Uttara', district_id: 1, district_name: 'Dhaka', population: 180510, total_providers: 3, population_per_provider: 60170, zone_flag: 'GREEN' },
+                { subregion_id: 4, subdistrict_name: 'Demra', district_id: 1, district_name: 'Dhaka', population: 278830, total_providers: 2, population_per_provider: 139415, zone_flag: 'GREEN' },
+                { subregion_id: 5, subdistrict_name: 'Kamrangirchar', district_id: 1, district_name: 'Dhaka', population: 372287, total_providers: 2, population_per_provider: 186143, zone_flag: 'GREEN' }
             ];
         }
 
