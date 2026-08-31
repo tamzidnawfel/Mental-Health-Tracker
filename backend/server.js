@@ -1243,6 +1243,7 @@ app.get('/api/languages', (req, res) => {
     });
 });
 
+// NAWFEL: FEATURE 1 START - Provider Directory Metadata API
 // Fetch Directory Metadata (Combined regions, specializations, languages, fee stats)
 app.get('/api/directory/meta', (req, res) => {
     const regionsSql = 'SELECT district_id, district_name, population FROM REGION ORDER BY district_id ASC';
@@ -1280,7 +1281,9 @@ app.get('/api/directory/meta', (req, res) => {
         });
     });
 });
+// NAWFEL: FEATURE 1 END - Provider Directory Metadata API
 
+// NAWFEL: FEATURE 1 START - Dynamic Multi-Criteria Provider Directory Search & Filter API
 // Comprehensive Filtered Provider Directory Endpoint (Therapists and Clinics)
 app.get('/api/directory', (req, res) => {
     const {
@@ -1428,11 +1431,13 @@ app.get('/api/directory', (req, res) => {
         });
     });
 });
+// NAWFEL: FEATURE 1 END - Dynamic Multi-Criteria Provider Directory Search & Filter API
 
 // ==========================================
 // APPOINTMENT BOOKING & PATIENT CARE API
 // ==========================================
 
+// NAWFEL: FEATURE 1 START - Book Appointment & Auto-Queue Priority Waitlist API
 // Book Appointment API
 // If provider capacity is full, AUTOMATICALLY enrolls patient into WAITLIST with initial ROUTINE priority!
 app.post('/api/appointments', (req, res) => {
@@ -1544,6 +1549,7 @@ app.post('/api/appointments', (req, res) => {
     });
     });
 });
+// NAWFEL: FEATURE 1 END - Book Appointment & Auto-Queue Priority Waitlist API
 
 
 // Fetch All Appointments and Waitlist Records for a Specific Patient
@@ -2055,6 +2061,7 @@ app.get('/api/patients/search', (req, res) => {
     });
 });
 
+// NAWFEL: FEATURE 2 START - Priority Waitlist & Automated Escalation Engine API
 // ==========================================
 // AUTOMATED WAITLIST ESCALATION ENGINE
 // ==========================================
@@ -2242,6 +2249,7 @@ app.put('/api/waitlist/:id/cancel', (req, res) => {
     req.url = `/api/waitlist/${req.params.id}`;
     app.handle(req, res);
 });
+// NAWFEL: FEATURE 2 END - Priority Waitlist & Automated Escalation Engine API
 
 // ==========================================
 // FEATURE 7: ZONE DETECTOR & PAGES

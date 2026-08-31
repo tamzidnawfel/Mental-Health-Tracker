@@ -1,3 +1,4 @@
+// NAWFEL: FEATURE 1 START - Provider Directory & Best-Fit Matching Frontend Logic
 /**
  * MindCare - Provider Directory & Best-Fit Matching JavaScript
  */
@@ -1155,3 +1156,5 @@ function escapeHtml(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
+
+// NAWFEL: FEATURE 1 END - Provider Directory & Best-Fit Matching Frontend Logic

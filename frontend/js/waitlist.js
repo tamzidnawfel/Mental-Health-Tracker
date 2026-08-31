@@ -1,3 +1,4 @@
+// NAWFEL: FEATURE 2 START - Priority Waitlist & Automated Escalation Frontend Logic
 /**
  * MindCare - Patient Personal Waitlist Tracker JS (waitlist.js)
  */
@@ -355,3 +356,5 @@ function escapeHtml(text) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
+
+// NAWFEL: FEATURE 2 END - Priority Waitlist & Automated Escalation Frontend Logic
