@@ -1859,6 +1859,12 @@ app.get('/api/patient/:id/history', (req, res) => {
         return res.status(400).json({ error: 'Valid patient ID is required.' });
     }
 
+    // =========================================================================
+    // QUERY 1: PATIENT DEMOGRAPHICS & PROFILE
+    // PURPOSE: Fetches patient identity, age, contact info, language, and district name.
+    // OUTPUT:  1 row with: patient_id, name, email, phone, date_of_birth, age,
+    //          preferred_language, street, city, zip_code, district_name, registered_date.
+    // =========================================================================
     const patientSql = `
         SELECT 
             p.patient_id, p.name, p.email, p.phone, 
@@ -1872,6 +1878,15 @@ app.get('/api/patient/:id/history', (req, res) => {
         WHERE p.patient_id = ?
     `;
 
+    // =========================================================================
+    // QUERY 2: DETAILED APPOINTMENT & PRESCRIPTION TIMELINE (CHRONOLOGICAL DOSSIER)
+    // PURPOSE: Joins APPOINTMENTS with PROVIDER, REGION, THERAPISTS/CLINICS subclasses,
+    //          and SPECIALIZATIONS to assemble a complete clinical checkup timeline.
+    // OUTPUT:  List of appointments ordered by newest date first, showing:
+    //          appointment_id, appointment_date, status, clinical_notes, prescription,
+    //          provider_name, session_fee, rating_avg, district_name, provider_type
+    //          ('therapist'/'clinic'), license/registration no, and grouped specializations.
+    // =========================================================================
     const appointmentsSql = `
         SELECT 
             a.appointment_id,
@@ -1905,6 +1920,14 @@ app.get('/api/patient/:id/history', (req, res) => {
         ORDER BY a.appointment_date DESC, a.appointment_id DESC
     `;
 
+    // =========================================================================
+    // QUERY 3: DOCTOR & CLINIC VISIT BREAKDOWN (PROVIDER LOYALTY & FREQUENCY)
+    // PURPOSE: Uses SQL aggregations (COUNT, conditional SUM, MAX) grouped by provider_id
+    //          to measure patient visit frequency and attendance record per provider.
+    // OUTPUT:  List of doctors/clinics visited showing: provider_name, provider_type,
+    //          district_name, total_visits, completed_visits, cancelled_visits,
+    //          active_visits, last_visit_date, and doctor specializations.
+    // =========================================================================
     const doctorVisitsSql = `
         SELECT 
             p.provider_id,
@@ -1933,6 +1956,13 @@ app.get('/api/patient/:id/history', (req, res) => {
         ORDER BY total_visits DESC, last_visit_date DESC
     `;
 
+    // =========================================================================
+    // QUERY 4: PROBLEM AREAS & SPECIALIZATIONS EXPLORED
+    // PURPOSE: Quantifies consultation count per specialization/disorder category
+    //          so the doctor sees what mental health conditions the patient focused on.
+    // OUTPUT:  List of condition tags and counts: spec_name, consultation_count
+    //          (e.g., 'Anxiety & Panic': 4 visits, 'CBT': 3 visits).
+    // =========================================================================
     const problemAreasSql = `
         SELECT 
             s.spec_name,
@@ -1945,6 +1975,14 @@ app.get('/api/patient/:id/history', (req, res) => {
         ORDER BY consultation_count DESC
     `;
 
+    // =========================================================================
+    // QUERY 5: WAITLIST & QUEUE HISTORY (WITH CALCULATED WAIT DAYS)
+    // PURPOSE: Queries waitlist history and calculates elapsed queue duration using
+    //          DATEDIFF(CURDATE(), request_date).
+    // OUTPUT:  List of waitlist records showing: waitlist_id, provider_name,
+    //          request_date, days_waiting (number of days in queue),
+    //          priority_level (ROUTINE, MODERATE, HIGH, CRITICAL), and status.
+    // =========================================================================
     const waitlistSql = `
         SELECT 
             w.waitlist_id,
