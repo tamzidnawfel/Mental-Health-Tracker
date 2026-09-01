@@ -673,24 +673,26 @@ app.get('/api/provider/:id/accessibility-analysis', (req, res) => {
 
     const sql = `
         SELECT
+            a.appointment_id,
             p.patient_id,
             p.name AS patient_name,
             r.district_name,
             p.income_bracket,
-            p.latitude AS patient_latitude,
-            p.longitude AS patient_longitude,
+            COALESCE(ps.Latitude, p.latitude) AS patient_latitude,
+            COALESCE(ps.Longitude, p.longitude) AS patient_longitude,
             pr.provider_id,
             pr.name AS provider_name,
             pr.session_fee,
-            pr.latitude AS provider_latitude,
-            pr.longitude AS provider_longitude
+            COALESCE(sr.Latitude, pr.latitude) AS provider_latitude,
+            COALESCE(sr.Longitude, pr.longitude) AS provider_longitude
         FROM APPOINTMENTS a
         JOIN PATIENT p ON a.patient_id = p.patient_id
+        LEFT JOIN subregion ps ON p.subregion_id = ps.subregion_id
         JOIN PROVIDER pr ON a.provider_id = pr.provider_id
+        LEFT JOIN subregion sr ON pr.subregion_id = sr.subregion_id
         LEFT JOIN REGION r ON p.district_id = r.district_id
         WHERE a.provider_id = ?
-        GROUP BY p.patient_id, pr.provider_id, r.district_name
-        ORDER BY p.patient_id
+        ORDER BY a.appointment_id ASC
     `;
 
     db.query(sql, [providerId], (err, rows) => {
@@ -715,6 +717,7 @@ app.get('/api/provider/:id/accessibility-analysis', (req, res) => {
                 : 'Insufficient Data';
 
             return {
+                appointment_id: row.appointment_id,
                 patient_id: row.patient_id,
                 patient_name: row.patient_name,
                 district_name: row.district_name || 'District not recorded',
@@ -729,17 +732,30 @@ app.get('/api/provider/:id/accessibility-analysis', (req, res) => {
                 overall_classification: overallClassification,
                 severity: accessibilitySeverity(overallClassification)
             };
-        }).sort((first, second) => second.severity - first.severity || first.patient_name.localeCompare(second.patient_name));
+        }).sort((first, second) => second.severity - first.severity || first.patient_name.localeCompare(second.patient_name) || (first.appointment_id || 0) - (second.appointment_id || 0));
 
+        const uniquePatientIds = new Set(patients.map(patient => patient.patient_id));
+        const financialRiskPatientIds = new Set(
+            patients.filter(patient => ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier)).map(patient => patient.patient_id)
+        );
         const summary = {
-            total_patients: patients.length,
-            financial_barriers: patients.filter(patient => ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier)).length,
+            total_patients: uniquePatientIds.size,
+            financial_barriers: financialRiskPatientIds.size,
             distance_barriers: patients.filter(patient => patient.distance_barrier === true).length,
-            both_barriers: patients.filter(patient => patient.distance_barrier === true && ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier)).length,
-            no_major_barriers: patients.filter(patient => patient.overall_classification === 'No Major Barrier').length
+            both_barriers: patients.filter(patient => patient.distance_barrier === true && ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier)).length
         };
         const incomeBrackets = ['10–30k', '30–50k', '50k+'];
-        const incomeCounts = incomeBrackets.map(bracket => ({ bracket, count: patients.filter(patient => patient.income_bracket === bracket).length }));
+        const uniquePatientsByIncomeBracket = new Map();
+        patients.forEach(patient => {
+            if (patient.patient_id === null || patient.patient_id === undefined) return;
+            if (!uniquePatientsByIncomeBracket.has(patient.patient_id)) {
+                uniquePatientsByIncomeBracket.set(patient.patient_id, patient.income_bracket);
+            }
+        });
+        const incomeCounts = incomeBrackets.map(bracket => ({
+            bracket,
+            count: [...uniquePatientsByIncomeBracket.values()].filter(value => value === bracket).length
+        }));
         const classificationCounts = [...new Set(patients.map(patient => patient.overall_classification))].map(classification => ({ classification, count: patients.filter(patient => patient.overall_classification === classification).length }));
 
         res.json({
@@ -1110,78 +1126,93 @@ app.get('/api/patient-home/accessibility-analysis', (req, res) => {
             });
         }
 
-        const districtPatientsSql = `
-            SELECT p.patient_id, p.name AS patient_name, p.income_bracket, p.latitude AS patient_latitude, p.longitude AS patient_longitude, r.district_name
-            FROM PATIENT p
+        const appointmentSql = `
+            SELECT
+                a.appointment_id,
+                p.patient_id,
+                p.name AS patient_name,
+                p.income_bracket,
+                COALESCE(ps.Latitude, p.latitude) AS patient_latitude,
+                COALESCE(ps.Longitude, p.longitude) AS patient_longitude,
+                r.district_name,
+                pr.provider_id,
+                pr.name AS provider_name,
+                COALESCE(sr.Latitude, pr.latitude) AS provider_latitude,
+                COALESCE(sr.Longitude, pr.longitude) AS provider_longitude,
+                pr.session_fee
+            FROM APPOINTMENTS a
+            JOIN PATIENT p ON a.patient_id = p.patient_id
+            LEFT JOIN subregion ps ON p.subregion_id = ps.subregion_id
+            JOIN PROVIDER pr ON a.provider_id = pr.provider_id
+            LEFT JOIN subregion sr ON pr.subregion_id = sr.subregion_id
             LEFT JOIN REGION r ON p.district_id = r.district_id
             WHERE p.district_id = ?
-            ORDER BY p.name ASC
+            ORDER BY p.name ASC, a.appointment_id ASC
         `;
 
-        db.query(districtPatientsSql, [districtId], (districtErr, districtRows) => {
-            if (districtErr) {
-                console.error('District patient accessibility error:', districtErr);
+        db.query(appointmentSql, [districtId], (appointmentErr, appointmentRows) => {
+            if (appointmentErr) {
+                console.error('District appointment accessibility error:', appointmentErr);
                 return res.status(500).json({ error: 'Failed to load district accessibility analysis.' });
             }
 
-            const providerSql = `
-                SELECT provider_id, name AS provider_name, latitude AS provider_latitude, longitude AS provider_longitude, session_fee
-                FROM PROVIDER
-                WHERE district_id = ?
-                ORDER BY name ASC
-            `;
+            const patients = (appointmentRows || []).map(row => {
+                const normalizedIncomeBracket = normalizeIncomeBracket(row.income_bracket);
+                const financialBarrier = normalizedIncomeBracket
+                    ? ACCESSIBILITY_CONFIG.financialBarrierByBracket[normalizedIncomeBracket]
+                    : null;
+                const hasCoordinates = [row.patient_latitude, row.patient_longitude, row.provider_latitude, row.provider_longitude]
+                    .every(value => value !== null && value !== undefined && Number.isFinite(Number(value)));
+                const distanceKm = hasCoordinates
+                    ? Number(haversineDistanceKm(Number(row.patient_latitude), Number(row.patient_longitude), Number(row.provider_latitude), Number(row.provider_longitude)).toFixed(2))
+                    : null;
+                const distanceBarrier = distanceKm === null ? null : distanceKm > ACCESSIBILITY_CONFIG.distanceBarrierKm;
+                const overallClassification = financialBarrier && distanceBarrier !== null
+                    ? accessibilityClassification(financialBarrier, distanceBarrier)
+                    : 'Insufficient Data';
 
-            db.query(providerSql, [districtId], (providerErr, providerRows) => {
-                if (providerErr) {
-                    console.error('District provider lookup error:', providerErr);
-                    return res.status(500).json({ error: 'Failed to load district providers.' });
+                return {
+                    appointment_id: row.appointment_id,
+                    patient_id: row.patient_id,
+                    patient_name: row.patient_name,
+                    district_name: row.district_name || 'District not recorded',
+                    income_bracket: normalizedIncomeBracket || row.income_bracket || 'Not recorded',
+                    provider_id: row.provider_id,
+                    provider_name: row.provider_name,
+                    distance_km: distanceKm,
+                    distance_barrier: distanceBarrier,
+                    financial_barrier: financialBarrier || 'Not classified',
+                    session_fee: row.session_fee,
+                    overall_classification: overallClassification,
+                    severity: accessibilitySeverity(overallClassification)
+                };
+            }).sort((first, second) => second.severity - first.severity || first.patient_name.localeCompare(second.patient_name) || (first.appointment_id || 0) - (second.appointment_id || 0));
+
+            const uniquePatientIds = new Set(patients.map(patient => patient.patient_id));
+            const financialBarrierPatientIds = new Set(
+                patients.filter(patient => ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier)).map(patient => patient.patient_id)
+            );
+            const uniquePatientsByIncomeBracket = new Map();
+            patients.forEach(patient => {
+                if (patient.patient_id === null || patient.patient_id === undefined) return;
+                if (!uniquePatientsByIncomeBracket.has(patient.patient_id)) {
+                    uniquePatientsByIncomeBracket.set(patient.patient_id, patient.income_bracket);
                 }
-
-                const providers = providerRows || [];
-                const patients = (districtRows || []).map(row => {
-                    const provider = providers
-                        .filter(candidate => candidate.provider_latitude !== null && candidate.provider_longitude !== null && candidate.provider_latitude !== undefined && candidate.provider_longitude !== undefined)
-                        .map(candidate => {
-                            const hasCoordinates = [row.patient_latitude, row.patient_longitude, candidate.provider_latitude, candidate.provider_longitude]
-                                .every(value => value !== null && value !== undefined && Number.isFinite(Number(value)));
-                            const distanceKm = hasCoordinates
-                                ? Number(haversineDistanceKm(Number(row.patient_latitude), Number(row.patient_longitude), Number(candidate.provider_latitude), Number(candidate.provider_longitude)).toFixed(2))
-                                : null;
-                            return { ...candidate, distanceKm };
-                        })
-                        .sort((a, b) => (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER))[0];
-
-                    const normalizedIncomeBracket = normalizeIncomeBracket(row.income_bracket);
-                    const financialBarrier = normalizedIncomeBracket
-                        ? ACCESSIBILITY_CONFIG.financialBarrierByBracket[normalizedIncomeBracket]
-                        : null;
-                    const distanceKm = provider ? provider.distanceKm : null;
-                    const distanceBarrier = distanceKm === null ? null : distanceKm > ACCESSIBILITY_CONFIG.distanceBarrierKm;
-                    const overallClassification = financialBarrier && distanceBarrier !== null
-                        ? accessibilityClassification(financialBarrier, distanceBarrier)
-                        : 'Insufficient Data';
-
-                    return {
-                        patient_id: row.patient_id,
-                        patient_name: row.patient_name,
-                        district_name: row.district_name || 'District not recorded',
-                        income_bracket: normalizedIncomeBracket || row.income_bracket || 'Not recorded',
-                        provider_id: provider ? provider.provider_id : null,
-                        provider_name: provider ? provider.provider_name : 'No local provider',
-                        distance_km: distanceKm,
-                        distance_barrier: distanceBarrier,
-                        financial_barrier: financialBarrier || 'Not classified',
-                        session_fee: provider ? provider.session_fee : null,
-                        overall_classification: overallClassification,
-                        severity: accessibilitySeverity(overallClassification)
-                    };
-                }).sort((first, second) => second.severity - first.severity || first.patient_name.localeCompare(second.patient_name));
-
-                return res.status(200).json({
-                    district_name: patient.district_name || 'District',
-                    config: ACCESSIBILITY_CONFIG,
-                    patients
-                });
+            });
+            return res.status(200).json({
+                district_name: patient.district_name || 'District',
+                config: ACCESSIBILITY_CONFIG,
+                summary: {
+                    total_patients: uniquePatientIds.size,
+                    financial_barriers: financialBarrierPatientIds.size,
+                    distance_barriers: patients.filter(patient => patient.distance_barrier === true).length,
+                    both_barriers: patients.filter(patient => patient.distance_barrier === true && ['High Financial Barrier', 'Moderate Financial Barrier'].includes(patient.financial_barrier)).length
+                },
+                patients,
+                income_brackets: ['10–30k', '30–50k', '50k+'].map(bracket => ({
+                    bracket,
+                    count: [...uniquePatientsByIncomeBracket.values()].filter(value => value === bracket).length
+                }))
             });
         });
     });
@@ -2333,41 +2364,29 @@ app.get('/api/subzone-detections', (req, res) => {
             s.Population AS population,
             s.district_id,
             r.district_name,
-            COUNT(p_closest.provider_id) AS total_providers,
+            COUNT(p.provider_id) AS total_providers,
             CASE 
-                WHEN COUNT(p_closest.provider_id) = 0 THEN s.Population 
-                ELSE ROUND(s.Population / COUNT(p_closest.provider_id)) 
+                WHEN COUNT(p.provider_id) = 0 THEN s.Population 
+                ELSE ROUND(s.Population / COUNT(p.provider_id)) 
             END AS population_per_provider,
             CASE 
-                WHEN COUNT(p_closest.provider_id) = 0 
-                     OR (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 75000 
+                WHEN COUNT(p.provider_id) = 0 
+                     OR (s.Population / NULLIF(COUNT(p.provider_id), 0)) > 75000 
                 THEN 'RED'
-                WHEN (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 50000 
+                WHEN (s.Population / NULLIF(COUNT(p.provider_id), 0)) > 50000 
                 THEN 'YELLOW'
                 ELSE 'GREEN'
             END AS zone_flag
         FROM subregion s
         JOIN region r ON s.district_id = r.district_id
-        LEFT JOIN (
-            SELECT 
-                p.provider_id,
-                p.district_id,
-                (
-                    SELECT s2.subregion_id 
-                    FROM subregion s2 
-                    WHERE s2.district_id = p.district_id 
-                    ORDER BY (POW(CAST(p.latitude AS DECIMAL(10,6)) - CAST(s2.Latitude AS DECIMAL(10,6)), 2) + POW(CAST(p.longitude AS DECIMAL(10,6)) - CAST(s2.Longitude AS DECIMAL(10,6)), 2)) ASC 
-                    LIMIT 1
-                ) AS closest_subregion_id
-            FROM provider p
-        ) p_closest ON s.subregion_id = p_closest.closest_subregion_id
+        LEFT JOIN provider p ON p.subregion_id = s.subregion_id
         ${whereSql}
         GROUP BY s.subregion_id, s.subregion_Name, s.Population, s.district_id, r.district_name
         ORDER BY s.district_id ASC, 
             CASE 
-                WHEN COUNT(p_closest.provider_id) = 0 
-                     OR (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 75000 THEN 1
-                WHEN (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 50000 THEN 2
+                WHEN COUNT(p.provider_id) = 0 
+                     OR (s.Population / NULLIF(COUNT(p.provider_id), 0)) > 75000 THEN 1
+                WHEN (s.Population / NULLIF(COUNT(p.provider_id), 0)) > 50000 THEN 2
                 ELSE 3
             END ASC,
             population_per_provider DESC
