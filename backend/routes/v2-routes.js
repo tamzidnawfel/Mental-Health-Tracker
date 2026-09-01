@@ -12,7 +12,7 @@ module.exports = function (db, getHtmlFiles) {
      * V2 APIs // ASHRAFUL: APIs for provider-appointments-v2.js
      */
 
-    // 1. Get V2 appointments for a provider with rich patient details (Fixed date formatting)
+    // 1. Get V2 appointments for a provider
     router.get('/api/provider/:id/appointments-v2', (req, res) => {
         const providerId = req.params.id;
         const query = `
