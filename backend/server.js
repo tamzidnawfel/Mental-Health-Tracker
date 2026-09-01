@@ -1265,6 +1265,7 @@ app.get('/api/languages', (req, res) => {
     });
 });
 
+// NAWFEL: FEATURE 1 START - Provider Directory & Best-Fit Matching API
 // Fetch Directory Metadata (Combined regions, specializations, languages, fee stats)
 app.get('/api/directory/meta', (req, res) => {
     const regionsSql = 'SELECT district_id, district_name, population FROM REGION ORDER BY district_id ASC';
@@ -1566,6 +1567,7 @@ app.post('/api/appointments', (req, res) => {
     });
     });
 });
+// NAWFEL: FEATURE 1 END - Provider Directory & Best-Fit Matching API
 
 
 // Fetch All Appointments and Waitlist Records for a Specific Patient
@@ -1845,6 +1847,7 @@ app.put('/api/appointments/:id/reschedule', (req, res) => {
     });
 });
 
+// NAWFEL: FEATURE 3 START - Patient Medical History & Clinical Dossier API
 // ==========================================
 // PATIENT MEDICAL HISTORY & CLINICAL DOSSIER API
 // ==========================================
@@ -2076,7 +2079,9 @@ app.get('/api/patients/search', (req, res) => {
         res.status(200).json(rows || []);
     });
 });
+// NAWFEL: FEATURE 3 END - Patient Medical History & Clinical Dossier API
 
+// NAWFEL: FEATURE 2 START - Priority Waitlist & Automated Escalation Engine API
 // ==========================================
 // AUTOMATED WAITLIST ESCALATION ENGINE
 // ==========================================
@@ -2264,6 +2269,7 @@ app.put('/api/waitlist/:id/cancel', (req, res) => {
     req.url = `/api/waitlist/${req.params.id}`;
     app.handle(req, res);
 });
+// NAWFEL: FEATURE 2 END - Priority Waitlist & Automated Escalation Engine API
 
 // ==========================================
 // FEATURE 7: ZONE DETECTOR & PAGES

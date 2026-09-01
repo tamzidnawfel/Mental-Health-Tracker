@@ -482,6 +482,7 @@ function renderWaitlistTable() {
     tbody.innerHTML = html;
 }
 
+// NAWFEL: FEATURE 3 START - Patient Medical History & Clinical Dossier Frontend Logic
 /**
  * 4. Patient Dossier & Medical History Modal
  */
@@ -933,6 +934,7 @@ window.openEditNotesModal = function(appointmentId, patientId, notes, prescripti
 
     if (modal) modal.style.display = 'flex';
 };
+// NAWFEL: FEATURE 3 END - Patient Medical History & Clinical Dossier Frontend Logic
 
 /**
  * 7. Admit Waitlisted Patient Modal Logic
