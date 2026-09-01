@@ -1912,7 +1912,7 @@ app.get('/api/patient/:id/history', (req, res) => {
     `;
 
     // =========================================================================
-    // QUERY 3: DOCTOR & CLINIC VISIT BREAKDOWN (PROVIDER LOYALTY & FREQUENCY)
+    // QUERY 3: DOCTOR & CLINIC VISIT
     // =========================================================================
     const doctorVisitsSql = `
         SELECT 
