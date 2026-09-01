@@ -2361,41 +2361,29 @@ app.get('/api/subzone-detections', (req, res) => {
             s.Population AS population,
             s.district_id,
             r.district_name,
-            COUNT(p_closest.provider_id) AS total_providers,
+            COUNT(p.provider_id) AS total_providers,
             CASE 
-                WHEN COUNT(p_closest.provider_id) = 0 THEN s.Population 
-                ELSE ROUND(s.Population / COUNT(p_closest.provider_id)) 
+                WHEN COUNT(p.provider_id) = 0 THEN s.Population 
+                ELSE ROUND(s.Population / COUNT(p.provider_id)) 
             END AS population_per_provider,
             CASE 
-                WHEN COUNT(p_closest.provider_id) = 0 
-                     OR (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 75000 
+                WHEN COUNT(p.provider_id) = 0 
+                     OR (s.Population / NULLIF(COUNT(p.provider_id), 0)) > 75000 
                 THEN 'RED'
-                WHEN (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 50000 
+                WHEN (s.Population / NULLIF(COUNT(p.provider_id), 0)) > 50000 
                 THEN 'YELLOW'
                 ELSE 'GREEN'
             END AS zone_flag
         FROM subregion s
         JOIN region r ON s.district_id = r.district_id
-        LEFT JOIN (
-            SELECT 
-                p.provider_id,
-                p.district_id,
-                (
-                    SELECT s2.subregion_id 
-                    FROM subregion s2 
-                    WHERE s2.district_id = p.district_id 
-                    ORDER BY (POW(CAST(p.latitude AS DECIMAL(10,6)) - CAST(s2.Latitude AS DECIMAL(10,6)), 2) + POW(CAST(p.longitude AS DECIMAL(10,6)) - CAST(s2.Longitude AS DECIMAL(10,6)), 2)) ASC 
-                    LIMIT 1
-                ) AS closest_subregion_id
-            FROM provider p
-        ) p_closest ON s.subregion_id = p_closest.closest_subregion_id
+        LEFT JOIN provider p ON p.subregion_id = s.subregion_id
         ${whereSql}
         GROUP BY s.subregion_id, s.subregion_Name, s.Population, s.district_id, r.district_name
         ORDER BY s.district_id ASC, 
             CASE 
-                WHEN COUNT(p_closest.provider_id) = 0 
-                     OR (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 75000 THEN 1
-                WHEN (s.Population / NULLIF(COUNT(p_closest.provider_id), 0)) > 50000 THEN 2
+                WHEN COUNT(p.provider_id) = 0 
+                     OR (s.Population / NULLIF(COUNT(p.provider_id), 0)) > 75000 THEN 1
+                WHEN (s.Population / NULLIF(COUNT(p.provider_id), 0)) > 50000 THEN 2
                 ELSE 3
             END ASC,
             population_per_provider DESC
